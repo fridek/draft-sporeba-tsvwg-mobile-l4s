@@ -20,6 +20,8 @@ keyword:
 venue:
   group: TSVWG
   type: Working Group
+  github: "fridek/draft-sporeba-mobile-l4s"
+  latest: "https://fridek.github.io/draft-sporeba-mobile-l4s/draft-sporeba-mobile-l4s.html"
 
 author:
  -
