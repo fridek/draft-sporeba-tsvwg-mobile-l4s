@@ -14,9 +14,9 @@ Expires: 14 December 2026                                   12 June 2026
 Abstract
 
    This document describes practical deployment considerations for Low
-   Latency, Low Loss, and Scalable Throughput (L4S) in mobile (cellular)
-   networks.  It defines the responsibilities of the Host Operating
-   System, the Cellular and Wifi Subsystems to ensure successful end-to-
+   Latency, Low Loss, and Scalable Throughput (L4S) in mobile networks.
+   It defines the responsibilities of the host operating system, the
+   link-layer (modem and WiFi) subsystems to ensure successful end-to-
    end low-latency communication.
 
 About This Document
@@ -66,42 +66,44 @@ Table of Contents
 
    1.  Introduction
      1.1.  Conventions and Definitions
-   2.  Host Operating System (OS) Requirements
-     2.1.  Socket APIs for UDP/QUIC and WebRTC
-     2.2.  UDP Out-of-Order Delivery
-     2.3.  TCP Accurate ECN (AccECN) and Fallback
-   3.  Modem Subsystem Requirements
-     3.1.  Packet Classification
+   2.  Host Operating System Requirements
+     2.1.  TCP Accurate ECN (AccECN) and Fallback
+     2.2.  Socket APIs for UDP
+   3.  Link-layer Subsystems Requirements
+     3.1.  Link-layer inbound packet reordering
      3.2.  Multi-Queue Scheduling and Bounded Latency
-     3.3.  Uplink Active Queue Management (AQM)
-     3.4.  Defense Against Misbehaving Traffic (Queue Protection)
-     3.5.  Transparency and Bleach Prevention
+     3.3.  Packet Classification
+     3.4.  Uplink Active Queue Management (AQM)
+     3.5.  Defense Against Misbehaving Traffic (Queue Protection)
+     3.6.  Transparency and Bleach Prevention
    4.  Middlebox Requirements
      4.1.  ECN and AccECN Transparency
      4.2.  Handshake Forwarding
    5.  Security Considerations
    6.  IANA Considerations
-   7.  Normative References
+   7.  References
+     7.1.  Normative References
+     7.2.  Informative References
    Authors' Addresses
 
 1.  Introduction
 
-   Mobile devices often have to react to quickly changing connectivity
-   conditions and may be subject to variable throughput and connection
-   quality.
-
-   Deploying L4S in a mobile ecosystem requires co-operation across
-   multiple layers: the application, the host operating system (OS), the
-   modem baseband firmware, and the core network middleboxes [RFC3234].
-   This document outlines practical deployment considerations and
-   requirements for each of these subsystems to achieve reliable, low-
-   latency performance in the field.
-
    L4S (Low Latency, Low Loss, Scalable Throughput) [RFC9330] offers a
    framework to significantly reduce queuing delay while maintaining
-   high throughput.  Networking on mobile devices frequently suffers
-   from latency spikes due to queue build-up (bufferbloat) and hardware
-   buffers.
+   high throughput.  Mobile devices often have to react to quickly
+   changing connectivity conditions and may be subject to variable
+   throughput and connection quality.  This can cause large variations
+   in user-perceived latency and greater bufferbloat than fixed devices.
+   This document outlines best current practices for implementing L4S in
+   mobile devices.
+
+   Deploying L4S in a mobile ecosystem requires co-operation across
+   multiple layers: the application, the host operating system (OS), and
+   link-layer drivers and firmware (e.g., Wi-Fi and cellular modem), and
+   the core network middleboxes [RFC3234].  This document outlines
+   practical deployment considerations and requirements for each of
+   these subsystems to achieve reliable, low-latency performance in the
+   field.
 
 1.1.  Conventions and Definitions
 
@@ -111,12 +113,23 @@ Table of Contents
    BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all
    capitals, as shown here.
 
-2.  Host Operating System (OS) Requirements
+2.  Host Operating System Requirements
 
    The host operating system controls application-level network access
    and hosts the primary TCP and UDP transport stacks.
 
-2.1.  Socket APIs for UDP/QUIC and WebRTC
+2.1.  TCP Accurate ECN (AccECN) and Fallback
+
+   The host OS kernel TCP stack SHOULD support the Accurate Explicit
+   Congestion Notification [RFC9768] and an L4S-compatible congestion
+   control algorithm (e.g., TCP Prague).  To defend against middleboxes
+   that drop SYN packets containing ECN or AccECN options, the client
+   TCP stack SHOULD implement a fallback mechanism: if the initial SYN
+   packet containing ECN/AccECN options times out or is dropped, the
+   stack SHOULD retransmit the SYN on the second attempt without ECN or
+   AccECN options.
+
+2.2.  Socket APIs for UDP
 
    To enable userspace transport stacks (such as QUIC and WebRTC) to
    utilize L4S, the OS MUST provide APIs that allow applications to:
@@ -132,55 +145,44 @@ Table of Contents
    restricted by default security policies for standard application
    sockets.
 
-2.2.  UDP Out-of-Order Delivery
+3.  Link-layer Subsystems Requirements
 
-   Out-of-order packet delivery is common in cellular networks due to
-   multi-path transmission or link-layer retransmissions.  Unlike TCP,
-   UDP does not require in-order delivery at the transport layer, and
-   applications like QUIC and WebRTC handle packet reordering in
-   userspace.
+   The link-layer (modem and WiFi) subsystems manage the link-layer
+   transmission over the radio interface and perform significant
+   queueing on the uplink path.
 
-   The host OS network stack MUST NOT delay or block incoming UDP
-   packets to enforce ordering.  Enforcing in-order delivery for UDP in
-   the OS kernel or driver introduces unnecessary Head-of-Line (HOL)
-   blocking latency.
+3.1.  Link-layer inbound packet reordering
 
-2.3.  TCP Accurate ECN (AccECN) and Fallback
+   Some link-layers provide strong ordering guarantees for inbound
+   packets by assigning a link-layer sequence number to each packet and
+   buffering incoming packets so they can be presented to the host
+   operating system in order.  In particular, out-of-order packet
+   delivery is common in cellular networks due to multi-path
+   transmission.  This causes out-of-order packets to be delayed until
+   all previous packets have been received, and causes latency spikes
+   when packets are lost due to transmission errors.
 
-   The host OS kernel TCP stack SHOULD support AccECN negotiation
-   [RFC9768] and an L4S-compatible congestion control algorithm (e.g.,
-   TCP Prague).
+   Delaying received packets increases latency, which is contrary to the
+   low-latency goals of L4S.  Also, by artificially introducing delays
+   that were not imposed by the network, it will reduce the accuracy of
+   protocol rate estimation.  Many contemporary protocol stacks are
+   generally well-equipped to handle out-of-order packets.
 
-   To defend against middleboxes that drop SYN packets containing ECN or
-   AccECN options, the client TCP stack MUST implement a fallback
-   mechanism: if the initial SYN packet containing ECN/AccECN options
-   times out or is dropped, the stack MUST retransmit the SYN on the
-   second attempt without ECN or AccECN options.
+   L4S-aware protocol stacks MUST be prepared to receive out-of-order
+   packets.
 
-3.  Modem Subsystem Requirements
-
-   The modem (baseband) manages the link-layer transmission over the
-   radio interface and performs significant queueing on the uplink path.
-
-3.1.  Packet Classification
-
-   The modem MUST map uplink traffic to the low-latency queue based on
-   ECN markings:
-
-   *  Packets carrying the ECT(1) or CE bits in the IP header MUST be
-      steered to the low-latency queue.
-
-   *  The modem SHOULD also support mapping to the low-latency queue
-      based on the Non-Queue-Building (NQB) DSCP value (45) [RFC9956] as
-      an alternative or supplementary classifier.
+   Link-layers MUST NOT buffer inbound packets in a way that imposes
+   measurable latency to the protocol stack.
 
 3.2.  Multi-Queue Scheduling and Bounded Latency
 
-   The modem MUST support a low-latency queue designated for Non-Queue-
-   Building [RFC9956] traffic.  Some modem systems are known to already
-   support high-priority and low-priority queues.  In the presence of
-   such queues, low-latency queue MUST be distinct from them.  An
-   example configuration might be:
+   Any link layer that supports L4S MUST support a low-latency queue
+   designated for Non-Queue-Building [RFC9956] traffic.  This queue MUST
+   be bounded as described in section 3.4.  Some modem systems are known
+   to already support high-priority and low-priority queues.  These
+   queues are typically not latency-bounded, so in the presence of such
+   queues, low-latency queue MUST be distinct from them.  An example
+   configuration might be:
 
    *  *L4S/Low-Latency Queue:* For ECT(1) and DSCP-45 marked traffic.
 
@@ -194,11 +196,26 @@ Table of Contents
    scheduling algorithm (e.g., Weighted Fair Queueing) that prevents
    starvation of other queues.
 
-3.3.  Uplink Active Queue Management (AQM)
+3.3.  Packet Classification
 
-   The modem uplink buffer is often a bottleneck due to cellular grant
-   scheduling.  When the uplink queue builds up, the modem MUST perform
-   ECN marking:
+   The link-layer MUST map uplink traffic to the low-latency queue based
+   on ECN markings:
+
+   *  Packets carrying the ECT(1) or CE bits in the IP header MUST be
+      steered to the low-latency queue.
+
+   *  The modem SHOULD also support mapping to the low-latency queue
+      based on the Non-Queue-Building (NQB) DSCP value (45) [RFC9956] as
+      an alternative or supplementary classifier.
+
+   *  TODO: Align this section with
+      [I-D.livingood-low-latency-deployment]
+
+3.4.  Uplink Active Queue Management (AQM)
+
+   The link-layer uplink buffer is often a bottleneck due to cellular
+   grant scheduling.  When the uplink queue builds up, the modem MUST
+   perform ECN marking:
 
    *  If the sojourn time of a packet in the L4S queue exceeds a shallow
       threshold (e.g., 1 ms to 5 ms), the modem MUST mark the packet as
@@ -208,7 +225,7 @@ Table of Contents
    *  Packets MUST only be dropped if the queue reaches the maximum
       designated size.
 
-3.4.  Defense Against Misbehaving Traffic (Queue Protection)
+3.5.  Defense Against Misbehaving Traffic (Queue Protection)
 
    Applications may mark their traffic as NQB or ECT(1) without
    implementing L4S congestion control, causing queue build-up in the
@@ -226,17 +243,17 @@ Table of Contents
       responding to CE marks), the modem MUST demote the flow and
       redirect its packets to a different queue.
 
-3.5.  Transparency and Bleach Prevention
+3.6.  Transparency and Bleach Prevention
 
-   The modem MUST NOT modify the ECN bits, TCP flags, or AccECN TCP
-   options (172 and 174) on transit traffic, except for performing
-   standard CE marking when congested.
+   The modem MUST NOT modify the ECN bits, DSCP flags, or AccECN TCP
+   options (172 and 174) on low-latency-queue transit traffic, except
+   for performing standard CE marking when congested.
 
 4.  Middlebox Requirements
 
    Middleboxes include cellular core network elements (such as the UPF
    and PGW), firewalls, NATs, and deep packet inspection (DPI)
-   appliances.
+   appliances.  TODO: Align with [I-D.livingood-low-latency-deployment]
 
 4.1.  ECN and AccECN Transparency
 
@@ -263,7 +280,9 @@ Table of Contents
 
    This document has no IANA actions.
 
-7.  Normative References
+7.  References
+
+7.1.  Normative References
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
@@ -299,6 +318,15 @@ Table of Contents
               Per-Hop Behavior (NQB PHB) for Differentiated Services",
               RFC 9956, DOI 10.17487/RFC9956, May 2026,
               <https://www.rfc-editor.org/rfc/rfc9956>.
+
+7.2.  Informative References
+
+   [I-D.livingood-low-latency-deployment]
+              Livingood, J., "ISP Dual Queue Networking Deployment
+              Observations", Work in Progress, Internet-Draft, draft-
+              livingood-low-latency-deployment-16, 17 April 2026,
+              <https://datatracker.ietf.org/doc/html/draft-livingood-
+              low-latency-deployment-16>.
 
 Authors' Addresses
 
