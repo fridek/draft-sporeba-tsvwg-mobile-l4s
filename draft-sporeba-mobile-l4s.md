@@ -34,6 +34,7 @@ author:
     email: lorenzo@google.com
 
 normative:
+  RFC3168:
   RFC3234:
   RFC9330:
   RFC9331:
@@ -68,7 +69,7 @@ The host operating system controls application-level network access and hosts th
 ## TCP Accurate ECN (AccECN) and Fallback
 
 The host OS kernel TCP stack SHOULD support the Accurate Explicit Congestion Notification {{RFC9768}} and an L4S-compatible congestion control algorithm (e.g., TCP Prague).
-To defend against middleboxes that drop SYN packets containing ECN or AccECN options, the client TCP stack SHOULD implement a fallback mechanism: if the initial SYN packet containing ECN/AccECN options times out or is dropped, the stack SHOULD retransmit the SYN on the second attempt without ECN or AccECN options.
+To defend against middleboxes that drop SYN packets containing ECN or AccECN options, the client TCP stack SHOULD implement a fallback mechanism: if the initial SYN packet containing ECN/AccECN options times out or is dropped, the stack SHOULD attempt to negotiate AccECN at least one more time on the first retransmission. If the first retransmission also fails to be acknowledged, subsequent retransmissions SHOULD fall back by clearing the ECN and AccECN options, as specified in Section 3.1.4.1 of {{RFC9768}}.
 
 
 ## Socket APIs for UDP
@@ -138,7 +139,7 @@ Middleboxes include cellular core network elements (such as the UPF and PGW), fi
 Middleboxes MUST NOT perform network-based classification or rewrite ECN/DSCP markings based on traffic heuristics or DPI. In accordance with {{I-D.livingood-low-latency-deployment}}, active classification decisions MUST be left to the application endpoints, and middleboxes MUST restrict their role to passive, transparent forwarding.
 
 ## ECN and AccECN Transparency
-Middleboxes MUST NOT clear (bleach) ECN bits. They MUST preserve `ECT(0)`, `ECT(1)`, and `CE` markings on all IP packets.
+Middleboxes MUST NOT clear (bleach) ECN bits, in accordance with {{RFC3168}}. They MUST preserve `ECT(0)`, `ECT(1)`, and `CE` markings on all IP packets.
 Furthermore, middleboxes MUST NOT strip, modify, or drop packets containing TCP options 172 or 174.
 
 ## Handshake Forwarding
