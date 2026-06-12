@@ -1,6 +1,6 @@
 ---
-title: "Practical Deployment Considerations for L4S in Mobile Networks"
-abbrev: "L4S Mobile Deploy"
+title: "Best Practices for L4S implementation for Mobile Devices"
+abbrev: "Mobile L4S"
 category: bcp
 docname: draft-sporeba-mobile-l4s-latest
 submissiontype: IETF
@@ -27,7 +27,7 @@ author:
  -
     fullname: Sebastian Poreba
     organization: Google LLC
-    email: sporeba@google.com
+    email: sebastian@poreba.me
  -
     fullname: Lorenzo Colitti
     organization: Google LLC
@@ -41,20 +41,22 @@ normative:
   RFC9956:
 
 informative:
-  RFC7772:
 
 ...
 --- abstract
 
-This document describes practical deployment considerations for Low Latency, Low Loss, and Scalable Throughput (L4S) in mobile (cellular) networks. It defines the responsibilities of the Host Operating System, the Modem Subsystem, and Middleboxes to ensure successful end-to-end low-latency communication. It targets a Best Current Practice (BCP) status.
+This document describes practical deployment considerations for Low Latency, Low Loss, and Scalable Throughput (L4S) in mobile (cellular) networks. It defines the responsibilities of the Host Operating System, the Cellular and Wifi Subsystems to ensure successful end-to-end low-latency communication.
 
 --- middle
 
 # Introduction
 
-Mobile cellular networks (LTE and 5G) frequently suffer from latency spikes due to queue build-up (bufferbloat) in the radio access network (RAN) and modem buffers. L4S (Low Latency, Low Loss, Scalable Throughput) {{RFC9330}} offers a framework to significantly reduce queuing delay while maintaining high throughput.
+Mobile devices often  have to react to quickly changing connectivity conditions and may be subject to variable throughput and connection quality.
 
-Deploying L4S in a cellular ecosystem requires co-operation across multiple layers: the application, the host operating system (OS), the modem baseband firmware, and the core network middleboxes {{RFC3234}}. This document outlines practical deployment considerations and requirements for each of these subsystems to achieve reliable, low-latency performance in the field.
+Deploying L4S in a mobile ecosystem requires co-operation across multiple layers: the application, the host operating system (OS), the modem baseband firmware, and the core network middleboxes {{RFC3234}}. This document outlines practical deployment considerations and requirements for each of these subsystems to achieve reliable, low-latency performance in the field.
+
+L4S (Low Latency, Low Loss, Scalable Throughput) {{RFC9330}} offers a framework to significantly reduce queuing delay while maintaining high throughput.
+Networking on mobile devices frequently suffers from latency spikes due to queue build-up (bufferbloat) and hardware buffers.
 
 ## Conventions and Definitions
 
