@@ -5,7 +5,7 @@
 TSVWG Working Group                                            S. Poreba
 Internet-Draft                                                L. Colitti
 Intended status: Best Current Practice                        Google LLC
-Expires: 13 December 2026                                   11 June 2026
+Expires: 14 December 2026                                   12 June 2026
 
 
      Practical Deployment Considerations for L4S in Mobile Networks
@@ -47,7 +47,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 13 December 2026.
+   This Internet-Draft will expire on 14 December 2026.
 
 Copyright Notice
 
@@ -82,7 +82,9 @@ Table of Contents
      4.2.  Handshake Forwarding
    5.  Security Considerations
    6.  IANA Considerations
-   7.  Normative References
+   7.  References
+     7.1.  Normative References
+     7.2.  Informative References
    Authors' Addresses
 
 1.  Introduction
@@ -95,7 +97,7 @@ Table of Contents
 
    Deploying L4S in a cellular ecosystem requires co-operation across
    multiple layers: the application, the host operating system (OS), the
-   modem baseband firmware, and the core network middleboxes [RFC 3234].
+   modem baseband firmware, and the core network middleboxes [RFC3234].
    This document outlines practical deployment considerations and
    requirements for each of these subsystems to achieve reliable, low-
    latency performance in the field.
@@ -143,8 +145,8 @@ Table of Contents
 2.3.  TCP Accurate ECN (AccECN) and Fallback
 
    The host OS kernel TCP stack SHOULD support AccECN negotiation
-   [draft-ietf-tcpm-accurate-ecn] and an L4S-compatible congestion
-   control algorithm (e.g., TCP Prague).
+   [I-D.ietf-tcpm-accurate-ecn] and an L4S-compatible congestion control
+   algorithm (e.g., TCP Prague).
 
    To defend against middleboxes that drop SYN packets containing ECN or
    AccECN options, the client TCP stack MUST implement a fallback
@@ -163,15 +165,15 @@ Table of Contents
    ECN markings: * Packets carrying the ECT(1) or CE bits in the IP
    header MUST be steered to the low-latency queue. * The modem SHOULD
    also support mapping to the low-latency queue based on the Non-Queue-
-   Building (NQB) DSCP value (45) [draft-ietf-tsvwg-nqb] as an
-   alternative or supplementary classifier.
+   Building (NQB) DSCP value (45) [I-D.ietf-tsvwg-nqb] as an alternative
+   or supplementary classifier.
 
 3.2.  Multi-Queue Scheduling and Bounded Latency
 
    The modem MUST support a low-latency queue designated for Non-Queue-
-   Building [draft-ietf-tsvwg-nqb] traffic.  Some modem systems are
-   known to already support high-priority and low-priority queues.  In
-   the presence of such queues, low-latency queue MUST be distinct from
+   Building [I-D.ietf-tsvwg-nqb] traffic.  Some modem systems are known
+   to already support high-priority and low-priority queues.  In the
+   presence of such queues, low-latency queue MUST be distinct from
    them.  An example configuration might be:
 
    1.  *L4S/Low-Latency Queue:* For ECT(1) and DSCP-45 marked traffic.
@@ -238,7 +240,7 @@ Table of Contents
 5.  Security Considerations
 
    L4S introduces potential abuse vectors where applications mark queue-
-   building traffic as low-latency.  As described in Section 4.4, the
+   building traffic as low-latency.  As described in Section 3.4, the
    baseband/modem subsystem MUST deploy queue protection mechanisms to
    defend the low-latency queue from starvation and latency degradation.
 
@@ -246,16 +248,56 @@ Table of Contents
 
    This document has no IANA actions.
 
-7.  Normative References
+7.  References
+
+7.1.  Normative References
+
+   [I-D.ietf-tcpm-accurate-ecn]
+              Briscoe, B., Kühlewind, M., and R. Scheffenegger, "More
+              Accurate Explicit Congestion Notification (AccECN)
+              Feedback in TCP", Work in Progress, Internet-Draft, draft-
+              ietf-tcpm-accurate-ecn-34, 10 March 2025,
+              <https://datatracker.ietf.org/doc/html/draft-ietf-tcpm-
+              accurate-ecn-34>.
+
+   [I-D.ietf-tsvwg-nqb]
+              White, G., Fossati, T., and R. Geib, "A Non-Queue-Building
+              Per-Hop Behavior (NQB PHB) for Differentiated Services",
+              Work in Progress, Internet-Draft, draft-ietf-tsvwg-nqb-33,
+              16 September 2025, <https://datatracker.ietf.org/doc/html/
+              draft-ietf-tsvwg-nqb-33>.
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
               DOI 10.17487/RFC2119, March 1997,
               <https://www.rfc-editor.org/rfc/rfc2119>.
 
+   [RFC3234]  Carpenter, B. and S. Brim, "Middleboxes: Taxonomy and
+              Issues", RFC 3234, DOI 10.17487/RFC3234, February 2002,
+              <https://www.rfc-editor.org/rfc/rfc3234>.
+
    [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
               May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
+
+   [RFC9330]  Briscoe, B., Ed., De Schepper, K., Bagnulo, M., and G.
+              White, "Low Latency, Low Loss, and Scalable Throughput
+              (L4S) Internet Service: Architecture", RFC 9330,
+              DOI 10.17487/RFC9330, January 2023,
+              <https://www.rfc-editor.org/rfc/rfc9330>.
+
+   [RFC9331]  De Schepper, K. and B. Briscoe, Ed., "The Explicit
+              Congestion Notification (ECN) Protocol for Low Latency,
+              Low Loss, and Scalable Throughput (L4S)", RFC 9331,
+              DOI 10.17487/RFC9331, January 2023,
+              <https://www.rfc-editor.org/rfc/rfc9331>.
+
+7.2.  Informative References
+
+   [RFC7772]  Yourtchenko, A. and L. Colitti, "Reducing Energy
+              Consumption of Router Advertisements", BCP 202, RFC 7772,
+              DOI 10.17487/RFC7772, February 2016,
+              <https://www.rfc-editor.org/rfc/rfc7772>.
 
 Authors' Addresses
 

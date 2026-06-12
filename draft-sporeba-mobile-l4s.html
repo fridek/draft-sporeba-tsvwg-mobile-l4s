@@ -1053,7 +1053,7 @@ svg {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Poreba &amp; Colitti</td>
-<td class="center">Expires 13 December 2026</td>
+<td class="center">Expires 14 December 2026</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1066,12 +1066,12 @@ svg {
 <dd class="internet-draft">draft-sporeba-mobile-l4s-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-06-11" class="published">11 June 2026</time>
+<time datetime="2026-06-12" class="published">12 June 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Best Current Practice</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2026-12-13">13 December 2026</time></dd>
+<dd class="expires"><time datetime="2026-12-14">14 December 2026</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1120,7 +1120,7 @@ svg {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 13 December 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 14 December 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1209,7 +1209,15 @@ svg {
             <p id="section-toc.1-1.6.1"><a href="#section-6" class="auto internal xref">6</a>.  <a href="#name-iana-considerations" class="internal xref">IANA Considerations</a></p>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7">
-            <p id="section-toc.1-1.7.1"><a href="#section-7" class="auto internal xref">7</a>.  <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+            <p id="section-toc.1-1.7.1"><a href="#section-7" class="auto internal xref">7</a>.  <a href="#name-references" class="internal xref">References</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.1">
+                <p id="section-toc.1-1.7.2.1.1"><a href="#section-7.1" class="auto internal xref">7.1</a>.  <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.2">
+                <p id="section-toc.1-1.7.2.2.1"><a href="#section-7.2" class="auto internal xref">7.2</a>.  <a href="#name-informative-references" class="internal xref">Informative References</a></p>
+</li>
+            </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8">
             <p id="section-toc.1-1.8.1"><a href="#appendix-A" class="auto internal xref"></a><a href="#name-authors-addresses" class="internal xref">Authors' Addresses</a></p>
@@ -1223,8 +1231,8 @@ svg {
       <h2 id="name-introduction">
 <a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
       </h2>
-<p id="section-1-1">Mobile cellular networks (LTE and 5G) frequently suffer from latency spikes due to queue build-up (bufferbloat) in the radio access network (RAN) and modem buffers. L4S (Low Latency, Low Loss, Scalable Throughput) [RFC9330] offers a framework to significantly reduce queuing delay while maintaining high throughput.<a href="#section-1-1" class="pilcrow">¶</a></p>
-<p id="section-1-2">Deploying L4S in a cellular ecosystem requires co-operation across multiple layers: the application, the host operating system (OS), the modem baseband firmware, and the core network middleboxes [RFC 3234]. This document outlines practical deployment considerations and requirements for each of these subsystems to achieve reliable, low-latency performance in the field.<a href="#section-1-2" class="pilcrow">¶</a></p>
+<p id="section-1-1">Mobile cellular networks (LTE and 5G) frequently suffer from latency spikes due to queue build-up (bufferbloat) in the radio access network (RAN) and modem buffers. L4S (Low Latency, Low Loss, Scalable Throughput) <span>[<a href="#RFC9330" class="cite xref">RFC9330</a>]</span> offers a framework to significantly reduce queuing delay while maintaining high throughput.<a href="#section-1-1" class="pilcrow">¶</a></p>
+<p id="section-1-2">Deploying L4S in a cellular ecosystem requires co-operation across multiple layers: the application, the host operating system (OS), the modem baseband firmware, and the core network middleboxes <span>[<a href="#RFC3234" class="cite xref">RFC3234</a>]</span>. This document outlines practical deployment considerations and requirements for each of these subsystems to achieve reliable, low-latency performance in the field.<a href="#section-1-2" class="pilcrow">¶</a></p>
 <div id="conventions-and-definitions">
 <section id="section-1.1">
         <h3 id="name-conventions-and-definitions">
@@ -1250,7 +1258,7 @@ appear in all capitals, as shown here.<a href="#section-1.1-1" class="pilcrow">�
 <a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-socket-apis-for-udp-quic-an" class="section-name selfRef">Socket APIs for UDP/QUIC and WebRTC</a>
         </h3>
 <p id="section-2.1-1">To enable userspace transport stacks (such as QUIC and WebRTC) to utilize L4S, the OS <span class="bcp14">MUST</span> provide APIs that allow applications to:
-1. Set the ECN codepoint to <code>ECT(1)</code> [RFC9331] on outgoing packets.
+1. Set the ECN codepoint to <code>ECT(1)</code> <span>[<a href="#RFC9331" class="cite xref">RFC9331</a>]</span> on outgoing packets.
 2. Read the ECN codepoints (specifically <code>CE</code> markings) of incoming packets.<a href="#section-2.1-1" class="pilcrow">¶</a></p>
 <p id="section-2.1-2">These capabilities <span class="bcp14">MUST</span> be exposed via standard socket options (e.g., <code>IP_TOS</code> and <code>IPV6_TCLASS</code> for setting, and <code>IP_RECVTOS</code> and <code>IPV6_RECVTCLASS</code> via ancillary data for reading) and <span class="bcp14">MUST NOT</span> be restricted by default security policies for standard application sockets.<a href="#section-2.1-2" class="pilcrow">¶</a></p>
 </section>
@@ -1269,7 +1277,7 @@ appear in all capitals, as shown here.<a href="#section-1.1-1" class="pilcrow">�
         <h3 id="name-tcp-accurate-ecn-accecn-and">
 <a href="#section-2.3" class="section-number selfRef">2.3. </a><a href="#name-tcp-accurate-ecn-accecn-and" class="section-name selfRef">TCP Accurate ECN (AccECN) and Fallback</a>
         </h3>
-<p id="section-2.3-1">The host OS kernel TCP stack <span class="bcp14">SHOULD</span> support AccECN negotiation [draft-ietf-tcpm-accurate-ecn] and an L4S-compatible congestion control algorithm (e.g., TCP Prague).<a href="#section-2.3-1" class="pilcrow">¶</a></p>
+<p id="section-2.3-1">The host OS kernel TCP stack <span class="bcp14">SHOULD</span> support AccECN negotiation <span>[<a href="#I-D.ietf-tcpm-accurate-ecn" class="cite xref">I-D.ietf-tcpm-accurate-ecn</a>]</span> and an L4S-compatible congestion control algorithm (e.g., TCP Prague).<a href="#section-2.3-1" class="pilcrow">¶</a></p>
 <p id="section-2.3-2">To defend against middleboxes that drop <code>SYN</code> packets containing ECN or AccECN options, the client TCP stack <span class="bcp14">MUST</span> implement a fallback mechanism: if the initial <code>SYN</code> packet containing ECN/AccECN options times out or is dropped, the stack <span class="bcp14">MUST</span> retransmit the <code>SYN</code> on the second attempt without ECN or AccECN options.<a href="#section-2.3-2" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -1288,7 +1296,7 @@ appear in all capitals, as shown here.<a href="#section-1.1-1" class="pilcrow">�
         </h3>
 <p id="section-3.1-1">The modem <span class="bcp14">MUST</span> map uplink traffic to the low-latency queue based on ECN markings:
 * Packets carrying the <code>ECT(1)</code> or <code>CE</code> bits in the IP header <span class="bcp14">MUST</span> be steered to the low-latency queue.
-* The modem <span class="bcp14">SHOULD</span> also support mapping to the low-latency queue based on the Non-Queue-Building (NQB) DSCP value (45) [draft-ietf-tsvwg-nqb] as an alternative or supplementary classifier.<a href="#section-3.1-1" class="pilcrow">¶</a></p>
+* The modem <span class="bcp14">SHOULD</span> also support mapping to the low-latency queue based on the Non-Queue-Building (NQB) DSCP value (45) <span>[<a href="#I-D.ietf-tsvwg-nqb" class="cite xref">I-D.ietf-tsvwg-nqb</a>]</span> as an alternative or supplementary classifier.<a href="#section-3.1-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="multi-queue-scheduling-and-bounded-latency">
@@ -1296,7 +1304,7 @@ appear in all capitals, as shown here.<a href="#section-1.1-1" class="pilcrow">�
         <h3 id="name-multi-queue-scheduling-and-">
 <a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-multi-queue-scheduling-and-" class="section-name selfRef">Multi-Queue Scheduling and Bounded Latency</a>
         </h3>
-<p id="section-3.2-1">The modem <span class="bcp14">MUST</span> support a low-latency queue designated for Non-Queue-Building [draft-ietf-tsvwg-nqb] traffic. Some modem systems are known to already support high-priority and low-priority queues. In the presence of such queues, low-latency queue <span class="bcp14">MUST</span> be distinct from them.
+<p id="section-3.2-1">The modem <span class="bcp14">MUST</span> support a low-latency queue designated for Non-Queue-Building <span>[<a href="#I-D.ietf-tsvwg-nqb" class="cite xref">I-D.ietf-tsvwg-nqb</a>]</span> traffic. Some modem systems are known to already support high-priority and low-priority queues. In the presence of such queues, low-latency queue <span class="bcp14">MUST</span> be distinct from them.
 An example configuration might be:<a href="#section-3.2-1" class="pilcrow">¶</a></p>
 <ol start="1" type="1" class="normal type-1" id="section-3.2-2">
 <li id="section-3.2-2.1">
@@ -1373,7 +1381,7 @@ Furthermore, middleboxes <span class="bcp14">MUST NOT</span> strip, modify, or d
       <h2 id="name-security-considerations">
 <a href="#section-5" class="section-number selfRef">5. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
       </h2>
-<p id="section-5-1">L4S introduces potential abuse vectors where applications mark queue-building traffic as low-latency. As described in Section 4.4, the baseband/modem subsystem <span class="bcp14">MUST</span> deploy queue protection mechanisms to defend the low-latency queue from starvation and latency degradation.<a href="#section-5-1" class="pilcrow">¶</a></p>
+<p id="section-5-1">L4S introduces potential abuse vectors where applications mark queue-building traffic as low-latency. As described in Section 3.4, the baseband/modem subsystem <span class="bcp14">MUST</span> deploy queue protection mechanisms to defend the low-latency queue from starvation and latency degradation.<a href="#section-5-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="iana-considerations">
@@ -1384,21 +1392,61 @@ Furthermore, middleboxes <span class="bcp14">MUST NOT</span> strip, modify, or d
 <p id="section-6-1">This document has no IANA actions.<a href="#section-6-1" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="sec-normative-references">
+<div id="sec-combined-references">
 <section id="section-7">
-      <h2 id="name-normative-references">
-<a href="#section-7" class="section-number selfRef">7. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+      <h2 id="name-references">
+<a href="#section-7" class="section-number selfRef">7. </a><a href="#name-references" class="section-name selfRef">References</a>
       </h2>
+<div id="sec-normative-references">
+<section id="section-7.1">
+        <h3 id="name-normative-references">
+<a href="#section-7.1" class="section-number selfRef">7.1. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+        </h3>
 <dl class="references">
+<dt id="I-D.ietf-tcpm-accurate-ecn">[I-D.ietf-tcpm-accurate-ecn]</dt>
+        <dd>
+<span class="refAuthor">Briscoe, B.</span>, <span class="refAuthor">Kühlewind, M.</span>, and <span class="refAuthor">R. Scheffenegger</span>, <span class="refTitle">"More Accurate Explicit Congestion Notification (AccECN) Feedback in TCP"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-tcpm-accurate-ecn-34</span>, <time datetime="2025-03-10" class="refDate">10 March 2025</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-tcpm-accurate-ecn-34">https://datatracker.ietf.org/doc/html/draft-ietf-tcpm-accurate-ecn-34</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="I-D.ietf-tsvwg-nqb">[I-D.ietf-tsvwg-nqb]</dt>
+        <dd>
+<span class="refAuthor">White, G.</span>, <span class="refAuthor">Fossati, T.</span>, and <span class="refAuthor">R. Geib</span>, <span class="refTitle">"A Non-Queue-Building Per-Hop Behavior (NQB PHB) for Differentiated Services"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-tsvwg-nqb-33</span>, <time datetime="2025-09-16" class="refDate">16 September 2025</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-tsvwg-nqb-33">https://datatracker.ietf.org/doc/html/draft-ietf-tsvwg-nqb-33</a>&gt;</span>. </dd>
+<dd class="break"></dd>
 <dt id="RFC2119">[RFC2119]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
 <dd class="break"></dd>
+<dt id="RFC3234">[RFC3234]</dt>
+        <dd>
+<span class="refAuthor">Carpenter, B.</span> and <span class="refAuthor">S. Brim</span>, <span class="refTitle">"Middleboxes: Taxonomy and Issues"</span>, <span class="seriesInfo">RFC 3234</span>, <span class="seriesInfo">DOI 10.17487/RFC3234</span>, <time datetime="2002-02" class="refDate">February 2002</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc3234">https://www.rfc-editor.org/rfc/rfc3234</a>&gt;</span>. </dd>
+<dd class="break"></dd>
 <dt id="RFC8174">[RFC8174]</dt>
-    <dd>
+        <dd>
 <span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
 <dd class="break"></dd>
+<dt id="RFC9330">[RFC9330]</dt>
+        <dd>
+<span class="refAuthor">Briscoe, B., Ed.</span>, <span class="refAuthor">De Schepper, K.</span>, <span class="refAuthor">Bagnulo, M.</span>, and <span class="refAuthor">G. White</span>, <span class="refTitle">"Low Latency, Low Loss, and Scalable Throughput (L4S) Internet Service: Architecture"</span>, <span class="seriesInfo">RFC 9330</span>, <span class="seriesInfo">DOI 10.17487/RFC9330</span>, <time datetime="2023-01" class="refDate">January 2023</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9330">https://www.rfc-editor.org/rfc/rfc9330</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9331">[RFC9331]</dt>
+      <dd>
+<span class="refAuthor">De Schepper, K.</span> and <span class="refAuthor">B. Briscoe, Ed.</span>, <span class="refTitle">"The Explicit Congestion Notification (ECN) Protocol for Low Latency, Low Loss, and Scalable Throughput (L4S)"</span>, <span class="seriesInfo">RFC 9331</span>, <span class="seriesInfo">DOI 10.17487/RFC9331</span>, <time datetime="2023-01" class="refDate">January 2023</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9331">https://www.rfc-editor.org/rfc/rfc9331</a>&gt;</span>. </dd>
+<dd class="break"></dd>
 </dl>
+</section>
+</div>
+<div id="sec-informative-references">
+<section id="section-7.2">
+        <h3 id="name-informative-references">
+<a href="#section-7.2" class="section-number selfRef">7.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
+        </h3>
+<dl class="references">
+<dt id="RFC7772">[RFC7772]</dt>
+      <dd>
+<span class="refAuthor">Yourtchenko, A.</span> and <span class="refAuthor">L. Colitti</span>, <span class="refTitle">"Reducing Energy Consumption of Router Advertisements"</span>, <span class="seriesInfo">BCP 202</span>, <span class="seriesInfo">RFC 7772</span>, <span class="seriesInfo">DOI 10.17487/RFC7772</span>, <time datetime="2016-02" class="refDate">February 2016</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc7772">https://www.rfc-editor.org/rfc/rfc7772</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+</div>
 </section>
 </div>
 <div id="authors-addresses">
