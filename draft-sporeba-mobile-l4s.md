@@ -34,8 +34,14 @@ author:
     email: lorenzo@google.com
 
 normative:
+  RFC3234:
+  RFC9330:
+  RFC9331:
+  I-D.ietf-tcpm-accurate-ecn:
+  I-D.ietf-tsvwg-nqb:
 
 informative:
+  RFC7772:
 
 ...
 --- abstract
@@ -46,9 +52,9 @@ This document describes practical deployment considerations for Low Latency, Low
 
 # Introduction
 
-Mobile cellular networks (LTE and 5G) frequently suffer from latency spikes due to queue build-up (bufferbloat) in the radio access network (RAN) and modem buffers. L4S (Low Latency, Low Loss, Scalable Throughput) [RFC9330] offers a framework to significantly reduce queuing delay while maintaining high throughput.
+Mobile cellular networks (LTE and 5G) frequently suffer from latency spikes due to queue build-up (bufferbloat) in the radio access network (RAN) and modem buffers. L4S (Low Latency, Low Loss, Scalable Throughput) {{RFC9330}} offers a framework to significantly reduce queuing delay while maintaining high throughput.
 
-Deploying L4S in a cellular ecosystem requires co-operation across multiple layers: the application, the host operating system (OS), the modem baseband firmware, and the core network middleboxes [RFC 3234]. This document outlines practical deployment considerations and requirements for each of these subsystems to achieve reliable, low-latency performance in the field.
+Deploying L4S in a cellular ecosystem requires co-operation across multiple layers: the application, the host operating system (OS), the modem baseband firmware, and the core network middleboxes {{RFC3234}}. This document outlines practical deployment considerations and requirements for each of these subsystems to achieve reliable, low-latency performance in the field.
 
 ## Conventions and Definitions
 
@@ -60,7 +66,7 @@ The host operating system controls application-level network access and hosts th
 
 ## Socket APIs for UDP/QUIC and WebRTC
 To enable userspace transport stacks (such as QUIC and WebRTC) to utilize L4S, the OS MUST provide APIs that allow applications to:
-1. Set the ECN codepoint to `ECT(1)` [RFC9331] on outgoing packets.
+1. Set the ECN codepoint to `ECT(1)` {{RFC9331}} on outgoing packets.
 2. Read the ECN codepoints (specifically `CE` markings) of incoming packets.
 
 These capabilities MUST be exposed via standard socket options (e.g., `IP_TOS` and `IPV6_TCLASS` for setting, and `IP_RECVTOS` and `IPV6_RECVTCLASS` via ancillary data for reading) and MUST NOT be restricted by default security policies for standard application sockets.
@@ -71,7 +77,7 @@ Out-of-order packet delivery is common in cellular networks due to multi-path tr
 The host OS network stack MUST NOT delay or block incoming UDP packets to enforce ordering. Enforcing in-order delivery for UDP in the OS kernel or driver introduces unnecessary Head-of-Line (HOL) blocking latency.
 
 ## TCP Accurate ECN (AccECN) and Fallback
-The host OS kernel TCP stack SHOULD support AccECN negotiation [draft-ietf-tcpm-accurate-ecn] and an L4S-compatible congestion control algorithm (e.g., TCP Prague).
+The host OS kernel TCP stack SHOULD support AccECN negotiation {{I-D.ietf-tcpm-accurate-ecn}} and an L4S-compatible congestion control algorithm (e.g., TCP Prague).
 
 To defend against middleboxes that drop `SYN` packets containing ECN or AccECN options, the client TCP stack MUST implement a fallback mechanism: if the initial `SYN` packet containing ECN/AccECN options times out or is dropped, the stack MUST retransmit the `SYN` on the second attempt without ECN or AccECN options.
 
@@ -82,10 +88,10 @@ The modem (baseband) manages the link-layer transmission over the radio interfac
 ## Packet Classification
 The modem MUST map uplink traffic to the low-latency queue based on ECN markings:
 * Packets carrying the `ECT(1)` or `CE` bits in the IP header MUST be steered to the low-latency queue.
-* The modem SHOULD also support mapping to the low-latency queue based on the Non-Queue-Building (NQB) DSCP value (45) [draft-ietf-tsvwg-nqb] as an alternative or supplementary classifier.
+* The modem SHOULD also support mapping to the low-latency queue based on the Non-Queue-Building (NQB) DSCP value (45) {{I-D.ietf-tsvwg-nqb}} as an alternative or supplementary classifier.
 
 ## Multi-Queue Scheduling and Bounded Latency
-The modem MUST support a low-latency queue designated for Non-Queue-Building [draft-ietf-tsvwg-nqb] traffic. Some modem systems are known to already support high-priority and low-priority queues. In the presence of such queues, low-latency queue MUST be distinct from them.
+The modem MUST support a low-latency queue designated for Non-Queue-Building {{I-D.ietf-tsvwg-nqb}} traffic. Some modem systems are known to already support high-priority and low-priority queues. In the presence of such queues, low-latency queue MUST be distinct from them.
 An example configuration might be:
 
 1. **L4S/Low-Latency Queue:** For `ECT(1)` and DSCP-45 marked traffic.
@@ -121,7 +127,7 @@ Middleboxes MUST transparently forward `SYN` and `SYN-ACK` packets that negotiat
 
 # Security Considerations
 
-L4S introduces potential abuse vectors where applications mark queue-building traffic as low-latency. As described in Section 4.4, the baseband/modem subsystem MUST deploy queue protection mechanisms to defend the low-latency queue from starvation and latency degradation.
+L4S introduces potential abuse vectors where applications mark queue-building traffic as low-latency. As described in Section 3.4, the baseband/modem subsystem MUST deploy queue protection mechanisms to defend the low-latency queue from starvation and latency degradation.
 
 # IANA Considerations
 
