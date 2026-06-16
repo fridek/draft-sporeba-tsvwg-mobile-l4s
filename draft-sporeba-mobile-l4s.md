@@ -72,6 +72,18 @@ The host OS kernel TCP stack SHOULD support the Accurate Explicit Congestion Not
 To defend against middleboxes that drop SYN packets containing ECN or AccECN options, the client TCP stack SHOULD implement a fallback mechanism: if the initial SYN packet containing ECN/AccECN options times out or is dropped, the stack SHOULD attempt to negotiate AccECN at least one more time on the first retransmission. If the first retransmission also fails to be acknowledged, subsequent retransmissions SHOULD fall back by clearing the ECN and AccECN options, as specified in Section 3.1.4.1 of {{RFC9768}}.
 
 
+## AccECN Path Traversal and Option Handling
+
+During the TCP three-way handshake, AccECN capability is negotiated solely using TCP header flags (the AE, CWR, and ECE flags in the SYN and SYN/ACK), as specified in Section 3.1 of {{RFC9768}}. However, once the connection is established, Detailed Feedback is exchanged using the AccECN TCP Option (Kind 172 or 174).
+
+Because some network paths may block, drop, or strip packets containing unrecognized TCP options, host OS TCP stacks MUST implement the following path traversal and fallback mechanisms:
+
+*  **Detection during Handshake**: If a TCP Server sends a SYN/ACK containing the AccECN option and does not receive an ACK (either due to packet loss or middlebox blocking), the server SHOULD retransmit the SYN/ACK without the AccECN option on the first retry. If this retransmission also times out, the server SHOULD retransmit the SYN/ACK with ECN flags cleared (AE,CWR,ECE) = (0,0,0) and no option, as specified in Section 3.2.3.2.2 of {{RFC9768}}.
+*  **Option Traversal Monitoring**: The host TCP stack MUST actively monitor the traversal of packets containing the AccECN option. If the stack detects a high drop rate on packets carrying the option compared to optionless packets, it MUST disable the use of the AccECN option for the remainder of the half-connection (falling back to the TCP header `ACE` field for ECN feedback).
+*  **AccECN Option Usage**: The host TCP stack MUST NOT include the AccECN option on every segment. The option SHOULD only be included on scheduled ACKs when one or more byte counters have changed since the previous ACK (Section 3.2.3.3 of {{RFC9768}}). If the available TCP option space is constrained (e.g., due to SACK options for packet loss, which MUST take priority), the AccECN option MUST be truncated or omitted entirely.
+*  **Fallback to Header Flags**: When the AccECN option is stripped or disabled due to detected drops, ECN feedback continues to operate gracefully using only the standard 3-bit `ACE` field in the TCP header flags. Senders MUST be capable of extracting ECN feedback from the `ACE` field using the packet-to-byte estimation algorithm defined in Appendix A.3 of {{RFC9768}}.
+
+
 ## Socket APIs for UDP
 
 To enable userspace transport stacks (such as QUIC and WebRTC) to utilize L4S, the OS MUST provide APIs that allow applications to:
