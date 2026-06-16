@@ -66,25 +66,25 @@ Table of Contents
 
    1.  Introduction
      1.1.  Conventions and Definitions
-   2.  Host operating system requirements
+   2.  Host Operating System Requirements
      2.1.  Socket APIs for UDP
      2.2.  TCP support detection and receive-side bootstrapping
-       2.2.1.  Per-connection ECN negotiation for TCP/IP frames
-       2.2.2.  Per-connection AccECN option negotiation and option
-               drop detection
+       2.2.1.  Per-connection ECN Negotiation for TCP/IP Frames
+       2.2.2.  Per-connection AccECN Option Negotiation and Option
+               Drop Detection
        2.2.3.  Per-network detection and latency mitigation
-   3.  Link-layer subsystems requirements
+   3.  Link-layer Subsystems Requirements
      3.1.  Link-layer inbound packet reordering
-     3.2.  Multi-queue scheduling and bounded latency
-     3.3.  Packet classification
-     3.4.  Uplink active queue management (AQM)
-     3.5.  Defense against misbehaving traffic (queue protection)
-     3.6.  Transparency and bleach prevention
-   4.  Middlebox requirements
-     4.1.  ECN and AccECN transparency
-     4.2.  Handshake forwarding
-   5.  Security considerations
-   6.  IANA considerations
+     3.2.  Multi-Queue Scheduling and Bounded Latency
+     3.3.  Packet Classification
+     3.4.  Uplink Active Queue Management (AQM)
+     3.5.  Defense Against Misbehaving Traffic (Queue Protection)
+     3.6.  Transparency and Bleach Prevention
+   4.  Middlebox Requirements
+     4.1.  ECN and AccECN Transparency
+     4.2.  Handshake Forwarding
+   5.  Security Considerations
+   6.  IANA Considerations
    7.  References
      7.1.  Normative References
      7.2.  Informative References
@@ -117,7 +117,7 @@ Table of Contents
    BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all
    capitals, as shown here.
 
-2.  Host operating system requirements
+2.  Host Operating System Requirements
 
    The host operating system controls application-level network access
    and hosts the primary TCP and UDP transport stacks.
@@ -145,7 +145,7 @@ Table of Contents
    process is divided into ECN negotiation on IP frames, and Accurate
    ECN option negotiation and drop detection.
 
-2.2.1.  Per-connection ECN negotiation for TCP/IP frames
+2.2.1.  Per-connection ECN Negotiation for TCP/IP Frames
 
    Negotiation of ECN support for TCP follows the Classic ECN setup
    defined in [RFC3168] and recapped in Section 1.4 of [RFC9768].  This
@@ -180,8 +180,8 @@ Table of Contents
       before falling back to sending subsequent SYNs with ECN flags
       cleared (AE,CWR,ECE) = (0,0,0) (Section 3.1.4.1 of [RFC9768]).
 
-2.2.2.  Per-connection AccECN option negotiation and option drop
-        detection
+2.2.2.  Per-connection AccECN Option Negotiation and Option Drop
+        Detection
 
    While basic ECN negotiation occurs via TCP flags, the Accurate ECN
    protocol utilizes the AccECN TCP Option (Kind 172 or 174) on data and
@@ -245,7 +245,7 @@ Table of Contents
    preferred TTL (e.g., 7 days) and preferably indexed per network to
    disambiguate between host and path support.
 
-3.  Link-layer subsystems requirements
+3.  Link-layer Subsystems Requirements
 
    The link-layer (modem and WiFi) subsystems manage the link-layer
    transmission over the radio interface and perform significant
@@ -274,7 +274,7 @@ Table of Contents
    Link-layers MUST NOT buffer inbound packets in a way that imposes
    measurable latency to the protocol stack.
 
-3.2.  Multi-queue scheduling and bounded latency
+3.2.  Multi-Queue Scheduling and Bounded Latency
 
    Any link layer that supports L4S MUST support a low-latency queue
    designated for Non-Queue-Building [RFC9956] traffic.  This queue MUST
@@ -296,7 +296,7 @@ Table of Contents
    scheduling algorithm (e.g., Weighted Fair Queueing) that prevents
    starvation of other queues.
 
-3.3.  Packet classification
+3.3.  Packet Classification
 
    The link-layer MUST map uplink traffic to the low-latency queue based
    on ECN markings:
@@ -321,7 +321,7 @@ Table of Contents
    [I-D.livingood-low-latency-deployment] (which also contains details
    on Wi-Fi link-layer queuing considerations).
 
-3.4.  Uplink active queue management (AQM)
+3.4.  Uplink Active Queue Management (AQM)
 
    The link-layer uplink buffer is often a bottleneck due to cellular
    grant scheduling.  When the uplink queue builds up, the modem MUST
@@ -335,7 +335,7 @@ Table of Contents
    *  Packets MUST only be dropped if the queue reaches the maximum
       designated size.
 
-3.5.  Defense against misbehaving traffic (queue protection)
+3.5.  Defense Against Misbehaving Traffic (Queue Protection)
 
    Applications may mark their traffic as NQB or ECT(1) without
    implementing L4S congestion control, causing queue build-up in the
@@ -353,13 +353,13 @@ Table of Contents
       responding to CE marks), the modem MUST demote the flow and
       redirect its packets to a different queue.
 
-3.6.  Transparency and bleach prevention
+3.6.  Transparency and Bleach Prevention
 
    The modem MUST NOT modify the ECN bits, DSCP flags, or AccECN TCP
    options (172 and 174) on low-latency-queue transit traffic, except
    for performing standard CE marking when congested.
 
-4.  Middlebox requirements
+4.  Middlebox Requirements
 
    Middleboxes include cellular core network elements (such as the UPF
    and PGW), firewalls, NATs, and deep packet inspection (DPI)
@@ -371,28 +371,28 @@ Table of Contents
    decisions MUST be left to the application endpoints, and middleboxes
    MUST restrict their role to passive, transparent forwarding.
 
-4.1.  ECN and AccECN transparency
+4.1.  ECN and AccECN Transparency
 
    Middleboxes MUST NOT clear (bleach) ECN bits, in accordance with
    [RFC3168].  They MUST preserve ECT(0), ECT(1), and CE markings on all
    IP packets.  Furthermore, middleboxes MUST NOT strip, modify, or drop
    packets containing TCP options 172 or 174.
 
-4.2.  Handshake forwarding
+4.2.  Handshake Forwarding
 
    Middleboxes MUST transparently forward SYN and SYN-ACK packets that
    negotiate ECN or AccECN.  Middleboxes MUST NOT drop TCP handshake
    packets solely due to the presence of ECN negotiation flags or AccECN
    TCP options.
 
-5.  Security considerations
+5.  Security Considerations
 
    L4S introduces potential abuse vectors where applications mark queue-
    building traffic as low-latency.  As described in Section 3.5, the
    baseband/modem subsystem MUST deploy queue protection mechanisms to
    defend the low-latency queue from starvation and latency degradation.
 
-6.  IANA considerations
+6.  IANA Considerations
 
    This document has no IANA actions.
 
