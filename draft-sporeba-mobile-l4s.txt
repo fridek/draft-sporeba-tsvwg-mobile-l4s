@@ -67,9 +67,11 @@ Table of Contents
    1.  Introduction
      1.1.  Conventions and Definitions
    2.  Host Operating System Requirements
-     2.1.  TCP Accurate ECN (AccECN) and Fallback
-     2.2.  AccECN Path Traversal and Option Handling
-     2.3.  Socket APIs for UDP
+     2.1.  L4S support detection and bootstrapping
+       2.1.1.  Per-connection ECN Negotiation for TCP/IP frames
+       2.1.2.  AccECN Option Negotiation and Option Drop Detection
+       2.1.3.  Implications on mobile networks
+     2.2.  Socket APIs for UDP
    3.  Link-layer Subsystems Requirements
      3.1.  Link-layer inbound packet reordering
      3.2.  Multi-Queue Scheduling and Bounded Latency
@@ -119,64 +121,113 @@ Table of Contents
    The host operating system controls application-level network access
    and hosts the primary TCP and UDP transport stacks.
 
-2.1.  TCP Accurate ECN (AccECN) and Fallback
+2.1.  L4S support detection and bootstrapping
 
-   The host OS kernel TCP stack SHOULD support the Accurate Explicit
-   Congestion Notification [RFC9768] and an L4S-compatible congestion
-   control algorithm (e.g., TCP Prague).  To defend against middleboxes
-   that drop SYN packets containing ECN or AccECN options, the client
-   TCP stack SHOULD implement a fallback mechanism: if the initial SYN
-   packet containing ECN/AccECN options times out or is dropped, the
-   stack SHOULD attempt to negotiate AccECN at least one more time on
-   the first retransmission.  If the first retransmission also fails to
-   be acknowledged, subsequent retransmissions SHOULD fall back by
-   clearing the ECN and AccECN options, as specified in Section 3.1.4.1
-   of [RFC9768].
+   To deploy L4S, host operating systems and link-layers must negotiate
+   ECN support and verify path integrity.  This process is divided into
+   ECN negotiation on IP frames, and Accurate ECN option negotiation and
+   drop detection.
 
-2.2.  AccECN Path Traversal and Option Handling
+2.1.1.  Per-connection ECN Negotiation for TCP/IP frames
 
-   During the TCP three-way handshake, AccECN capability is negotiated
-   solely using TCP header flags (the AE, CWR, and ECE flags in the SYN
-   and SYN/ACK), as specified in Section 3.1 of [RFC9768].  However,
-   once the connection is established, Detailed Feedback is exchanged
-   using the AccECN TCP Option (Kind 172 or 174).
+   Negotiation of ECN support for TCP follows the Classic ECN setup
+   defined in [RFC3168] and recapped in Section 1.4 of [RFC9768].  This
+   is based on the two ECN bits in the IP header (codepoints ECT(0),
+   ECT(1), CE, and Not-ECT) and the ECN flags in the TCP header (AE,
+   CWR, and ECE).
 
-   Because some network paths may block, drop, or strip packets
-   containing unrecognized TCP options, host OS TCP stacks MUST
-   implement the following path traversal and fallback mechanisms:
+   *  In accordance with Section 6.1.1 of [RFC3168], ECN-setup SYN
+      packets MUST NOT have ECN bits set in the IP header (i.e. they
+      MUST be marked Not-ECT), unless participating in specific
+      experimental TCP setups [RFC8311].  The client MUST set the TCP
+      header flags (AE, CWR, ECE) to (1, 1, 1) to signal AccECN support
+      (Section 3.1.1 of [RFC9768]).
 
-   *  *Detection during Handshake*: If a TCP Server sends a SYN/ACK
-      containing the AccECN option and does not receive an ACK (either
-      due to packet loss or middlebox blocking), the server SHOULD
-      retransmit the SYN/ACK without the AccECN option on the first
-      retry.  If this retransmission also times out, the server SHOULD
-      retransmit the SYN/ACK with ECN flags cleared (AE,CWR,ECE) =
-      (0,0,0) and no option, as specified in Section 3.2.3.2.2 of
+   *  If the server supports AccECN, it MUST respond with a SYN/ACK
+      containing the TCP flags (AE, CWR, ECE) set to one of the valid
+      AccECN combinations listed in Section 3.1.2 of [RFC9768]
+      (typically (0, 1, 0) or (0, 1, 1)).  The IP header ECN bits of the
+      SYN/ACK SHOULD be marked Not-ECT or ECT(0) depending on the
+      server's local configuration.
+
+   *  The client completes ECN negotiation on the final ACK.  If ECN/
+      AccECN support was successfully negotiated during the handshake,
+      subsequent data packets MUST be sent with ECN bits set to ECT(1)
+      in the IP header to request L4S treatment (Section 4.1 of
+      [RFC9331]).
+
+   *  To defend against faulty middleboxes that drop SYN packets
+      containing ECN flags (Section 6.1.1.1 of [RFC3168]), the client
+      TCP stack MUST implement a fallback mechanism: if the initial SYN
+      times out, the client SHOULD retry the ECN-setup SYN at least once
+      before falling back to sending subsequent SYNs with ECN flags
+      cleared (AE,CWR,ECE) = (0,0,0) (Section 3.1.4.1 of [RFC9768]).
+
+2.1.2.  AccECN Option Negotiation and Option Drop Detection
+
+   While basic ECN negotiation occurs via TCP flags, the Accurate ECN
+   protocol utilizes the AccECN TCP Option (Kind 172 or 174) on data and
+   ACK packets to feed back congestion counts (Section 3.2.3 of
+   [RFC9768]).  Because some network paths may drop packets containing
+   unrecognized TCP options, host TCP stacks MUST implement active drop
+   detection and option retransmission fallback:
+
+   *  A TCP Server confirming AccECN support SHOULD include the AccECN
+      option on the SYN/ACK.  The TCP Client SHOULD include the AccECN
+      option on the final ACK of the handshake and on its first data
+      segment (Section 3.2.3.2.1 of [RFC9768]).
+
+   *  If the server's initial SYN/ACK containing the AccECN option times
+      out (potentially blocked by a middlebox), the server SHOULD
+      retransmit the SYN/ACK without the AccECN option.  If this first
+      retransmission also times out, the server SHOULD fall back further
+      by retransmitting the SYN/ACK with ECN flags cleared (AE,CWR,ECE)
+      = (0,0,0) and no option, as specified in Section 3.2.3.2.2 of
       [RFC9768].
 
-   *  *Option Traversal Monitoring*: The host TCP stack MUST actively
-      monitor the traversal of packets containing the AccECN option.  If
-      the stack detects a high drop rate on packets carrying the option
-      compared to optionless packets, it MUST disable the use of the
-      AccECN option for the remainder of the half-connection (falling
-      back to the TCP header ACE field for ECN feedback).
+   *  If the client's first data segment containing the AccECN option
+      fails to be acknowledged, the client SHOULD retransmit the data
+      segment without the AccECN option (Section 3.2.3.2.2 of
+      [RFC9768]).
 
-   *  *AccECN Option Usage*: The host TCP stack MUST NOT include the
-      AccECN option on every segment.  The option SHOULD only be
-      included on scheduled ACKs when one or more byte counters have
-      changed since the previous ACK (Section 3.2.3.3 of [RFC9768]).  If
-      the available TCP option space is constrained (e.g., due to SACK
-      options for packet loss, which MUST take priority), the AccECN
-      option MUST be truncated or omitted entirely.
+   *  The host TCP stack MUST monitor packet loss for packets containing
+      the AccECN option.  If the loss probability of packets with the
+      option is significantly higher than that of other data packets,
+      the stack MUST disable the use of the AccECN option for that half-
+      connection, falling back entirely to using the ACE field in the
+      standard TCP header (which cannot be stripped or blocked).
 
-   *  *Fallback to Header Flags*: When the AccECN option is stripped or
-      disabled due to detected drops, ECN feedback continues to operate
-      gracefully using only the standard 3-bit ACE field in the TCP
-      header flags.  Senders MUST be capable of extracting ECN feedback
-      from the ACE field using the packet-to-byte estimation algorithm
-      defined in Appendix A.3 of [RFC9768].
+   *  The AccECN TCP option MUST NOT be sent on every packet.  The
+      option SHOULD only be included on scheduled ACKs when ECN byte
+      counters have incremented since the last ACK (Section 3.2.3.3 of
+      [RFC9768]).  Furthermore, standard TCP options like SACK blocks
+      (for loss recovery) MUST take precedence over the AccECN option;
+      if option space is constrained, the AccECN option MUST be
+      truncated or omitted.
 
-2.3.  Socket APIs for UDP
+   *  When the AccECN option is stripped or disabled due to detected
+      drops, ECN feedback continues to operate gracefully using only the
+      standard 3-bit ACE field in the TCP header flags.  Senders MUST be
+      capable of extracting ECN feedback from the ACE field using the
+      packet-to-byte estimation algorithm defined in Appendix A.3 of
+      [RFC9768].
+
+2.1.3.  Implications on mobile networks
+
+   Latency can be critical to mobile applications, and fallback paths
+   dependent purely on retransmissions and timeouts can lead to a
+   degraded user experience in scenarios where L4S is blocked.  A host
+   system that wants to be resilient to this MAY attempt a connectivity
+   check to a known, L4S-supporting service.  In case of check failure,
+   the result can be used to turn off L4S negotiation attempts for a
+   given network, represented by PLMN/APN (in carrier networks) or BSSID
+   (in Wi-Fi networks).  Additionally, the host system MAY maintain
+   additional support disallowlists on a per-host, per-IP-range, or per-
+   ASN basis.  When maintaining such lists, entries should be retried
+   after a preferred TTL (e.g., 7 days) and, if possible, indexed per
+   network.
+
+2.2.  Socket APIs for UDP
 
    To enable userspace transport stacks (such as QUIC and WebRTC) to
    utilize L4S, the OS MUST provide APIs that allow applications to:
@@ -364,6 +415,11 @@ Table of Contents
    [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
               May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
+
+   [RFC8311]  Black, D., "Relaxing Restrictions on Explicit Congestion
+              Notification (ECN) Experimentation", RFC 8311,
+              DOI 10.17487/RFC8311, January 2018,
+              <https://www.rfc-editor.org/rfc/rfc8311>.
 
    [RFC9330]  Briscoe, B., Ed., De Schepper, K., Bagnulo, M., and G.
               White, "Low Latency, Low Loss, and Scalable Throughput

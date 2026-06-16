@@ -10,7 +10,7 @@
 <meta content="
        This document describes practical deployment considerations for Low Latency, Low Loss, and Scalable Throughput (L4S) in mobile networks. It defines the responsibilities of the host operating system, the link-layer (modem and WiFi) subsystems to ensure successful end-to-end low-latency communication. 
     " name="description">
-<meta content="xml2rfc 3.33.0" name="generator">
+<meta content="xml2rfc 3.34.0" name="generator">
 <meta content="L4S" name="keyword">
 <meta content="Mobile" name="keyword">
 <meta content="Cellular" name="keyword">
@@ -19,18 +19,19 @@
 <meta content="NQB" name="keyword">
 <meta content="draft-sporeba-mobile-l4s-latest" name="ietf.draft">
 <!-- Generator version information:
-  xml2rfc 3.33.0
-    Python 3.12.13
-    ConfigArgParse 1.7
+  xml2rfc 3.34.0
+    Python 3.13.12
+    ConfigArgParse 1.7.5
     google-i18n-address 3.1.1
     intervaltree 3.2.1
     Jinja2 3.1.6
-    lxml 6.0.2
-    platformdirs 4.9.6
-    pycountry 24.6.1
+    lxml 6.1.1
+    natsort 8.4.0
+    platformdirs 4.10.0
+    pycountry 26.2.16
     PyYAML 6.0.3
-    requests 2.33.1
-    wcwidth 0.7.0
+    requests 2.34.2
+    wcwidth 0.8.1
 -->
 <link href="draft-sporeba-mobile-l4s.xml" rel="alternate" type="application/rfc+xml">
 <link href="#copyright" rel="license">
@@ -1161,13 +1162,21 @@ svg {
             <p id="section-toc.1-1.2.1"><a href="#section-2" class="auto internal xref">2</a>.  <a href="#name-host-operating-system-requi" class="internal xref">Host Operating System Requirements</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1">
-                <p id="section-toc.1-1.2.2.1.1" class="keepWithNext"><a href="#section-2.1" class="auto internal xref">2.1</a>.  <a href="#name-tcp-accurate-ecn-accecn-and" class="internal xref">TCP Accurate ECN (AccECN) and Fallback</a></p>
+                <p id="section-toc.1-1.2.2.1.1"><a href="#section-2.1" class="auto internal xref">2.1</a>.  <a href="#name-l4s-support-detection-and-b" class="internal xref">L4S support detection and bootstrapping</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1.2.1">
+                    <p id="section-toc.1-1.2.2.1.2.1.1" class="keepWithNext"><a href="#section-2.1.1" class="auto internal xref">2.1.1</a>.  <a href="#name-per-connection-ecn-negotiat" class="internal xref">Per-connection ECN Negotiation for TCP/IP frames</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1.2.2">
+                    <p id="section-toc.1-1.2.2.1.2.2.1"><a href="#section-2.1.2" class="auto internal xref">2.1.2</a>.  <a href="#name-accecn-option-negotiation-a" class="internal xref">AccECN Option Negotiation and Option Drop Detection</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1.2.3">
+                    <p id="section-toc.1-1.2.2.1.2.3.1"><a href="#section-2.1.3" class="auto internal xref">2.1.3</a>.  <a href="#name-implications-on-mobile-netw" class="internal xref">Implications on mobile networks</a></p>
+</li>
+                </ul>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.2">
-                <p id="section-toc.1-1.2.2.2.1"><a href="#section-2.2" class="auto internal xref">2.2</a>.  <a href="#name-accecn-path-traversal-and-o" class="internal xref">AccECN Path Traversal and Option Handling</a></p>
-</li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.3">
-                <p id="section-toc.1-1.2.2.3.1"><a href="#section-2.3" class="auto internal xref">2.3</a>.  <a href="#name-socket-apis-for-udp" class="internal xref">Socket APIs for UDP</a></p>
+                <p id="section-toc.1-1.2.2.2.1"><a href="#section-2.2" class="auto internal xref">2.2</a>.  <a href="#name-socket-apis-for-udp" class="internal xref">Socket APIs for UDP</a></p>
 </li>
             </ul>
 </li>
@@ -1255,53 +1264,87 @@ appear in all capitals, as shown here.<a href="#section-1.1-1" class="pilcrow">�
 <a href="#section-2" class="section-number selfRef">2. </a><a href="#name-host-operating-system-requi" class="section-name selfRef">Host Operating System Requirements</a>
       </h2>
 <p id="section-2-1">The host operating system controls application-level network access and hosts the primary TCP and UDP transport stacks.<a href="#section-2-1" class="pilcrow">¶</a></p>
-<div id="tcp-accurate-ecn-accecn-and-fallback">
+<div id="l4s-support-detection-and-bootstrapping">
 <section id="section-2.1">
-        <h3 id="name-tcp-accurate-ecn-accecn-and">
-<a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-tcp-accurate-ecn-accecn-and" class="section-name selfRef">TCP Accurate ECN (AccECN) and Fallback</a>
+        <h3 id="name-l4s-support-detection-and-b">
+<a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-l4s-support-detection-and-b" class="section-name selfRef">L4S support detection and bootstrapping</a>
         </h3>
-<p id="section-2.1-1">The host OS kernel TCP stack <span class="bcp14">SHOULD</span> support the Accurate Explicit Congestion Notification <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span> and an L4S-compatible congestion control algorithm (e.g., TCP Prague).
-To defend against middleboxes that drop SYN packets containing ECN or AccECN options, the client TCP stack <span class="bcp14">SHOULD</span> implement a fallback mechanism: if the initial SYN packet containing ECN/AccECN options times out or is dropped, the stack <span class="bcp14">SHOULD</span> attempt to negotiate AccECN at least one more time on the first retransmission. If the first retransmission also fails to be acknowledged, subsequent retransmissions <span class="bcp14">SHOULD</span> fall back by clearing the ECN and AccECN options, as specified in Section 3.1.4.1 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>.<a href="#section-2.1-1" class="pilcrow">¶</a></p>
+<p id="section-2.1-1">To deploy L4S, host operating systems and link-layers must negotiate ECN support and verify path integrity. This process is divided into ECN negotiation on IP frames, and Accurate ECN option negotiation and drop detection.<a href="#section-2.1-1" class="pilcrow">¶</a></p>
+<div id="per-connection-ecn-negotiation-for-tcpip-frames">
+<section id="section-2.1.1">
+          <h4 id="name-per-connection-ecn-negotiat">
+<a href="#section-2.1.1" class="section-number selfRef">2.1.1. </a><a href="#name-per-connection-ecn-negotiat" class="section-name selfRef">Per-connection ECN Negotiation for TCP/IP frames</a>
+          </h4>
+<p id="section-2.1.1-1">Negotiation of ECN support for TCP follows the Classic ECN setup defined in <span>[<a href="#RFC3168" class="cite xref">RFC3168</a>]</span> and recapped in Section 1.4 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>. This is based on the two ECN bits in the IP header (codepoints <code>ECT(0)</code>, <code>ECT(1)</code>, <code>CE</code>, and <code>Not-ECT</code>) and the ECN flags in the TCP header (AE, CWR, and ECE).<a href="#section-2.1.1-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-2.1.1-2.1">
+              <p id="section-2.1.1-2.1.1">In accordance with Section 6.1.1 of <span>[<a href="#RFC3168" class="cite xref">RFC3168</a>]</span>, ECN-setup SYN packets <span class="bcp14">MUST NOT</span> have ECN bits set in the IP header (i.e. they <span class="bcp14">MUST</span> be marked <code>Not-ECT</code>), unless participating in specific experimental TCP setups <span>[<a href="#RFC8311" class="cite xref">RFC8311</a>]</span>. The client <span class="bcp14">MUST</span> set the TCP header flags (AE, CWR, ECE) to (1, 1, 1) to signal AccECN support (Section 3.1.1 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>).<a href="#section-2.1.1-2.1.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-2.1.1-2.2">
+              <p id="section-2.1.1-2.2.1">If the server supports AccECN, it <span class="bcp14">MUST</span> respond with a SYN/ACK containing the TCP flags (AE, CWR, ECE) set to one of the valid AccECN combinations listed in Section 3.1.2 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span> (typically (0, 1, 0) or (0, 1, 1)). The IP header ECN bits of the SYN/ACK <span class="bcp14">SHOULD</span> be marked <code>Not-ECT</code> or <code>ECT(0)</code> depending on the server's local configuration.<a href="#section-2.1.1-2.2.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-2.1.1-2.3">
+              <p id="section-2.1.1-2.3.1">The client completes ECN negotiation on the final ACK. If ECN/AccECN support was successfully negotiated during the handshake, subsequent data packets <span class="bcp14">MUST</span> be sent with ECN bits set to <code>ECT(1)</code> in the IP header to request L4S treatment (Section 4.1 of <span>[<a href="#RFC9331" class="cite xref">RFC9331</a>]</span>).<a href="#section-2.1.1-2.3.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-2.1.1-2.4">
+              <p id="section-2.1.1-2.4.1">To defend against faulty middleboxes that drop SYN packets containing ECN flags (Section 6.1.1.1 of <span>[<a href="#RFC3168" class="cite xref">RFC3168</a>]</span>), the client TCP stack <span class="bcp14">MUST</span> implement a fallback mechanism: if the initial SYN times out, the client <span class="bcp14">SHOULD</span> retry the ECN-setup SYN at least once before falling back to sending subsequent SYNs with ECN flags cleared (AE,CWR,ECE) = (0,0,0) (Section 3.1.4.1 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>).<a href="#section-2.1.1-2.4.1" class="pilcrow">¶</a></p>
+</li>
+          </ul>
 </section>
 </div>
-<div id="accecn-path-traversal-and-option-handling">
-<section id="section-2.2">
-        <h3 id="name-accecn-path-traversal-and-o">
-<a href="#section-2.2" class="section-number selfRef">2.2. </a><a href="#name-accecn-path-traversal-and-o" class="section-name selfRef">AccECN Path Traversal and Option Handling</a>
-        </h3>
-<p id="section-2.2-1">During the TCP three-way handshake, AccECN capability is negotiated solely using TCP header flags (the AE, CWR, and ECE flags in the SYN and SYN/ACK), as specified in Section 3.1 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>. However, once the connection is established, Detailed Feedback is exchanged using the AccECN TCP Option (Kind 172 or 174).<a href="#section-2.2-1" class="pilcrow">¶</a></p>
-<p id="section-2.2-2">Because some network paths may block, drop, or strip packets containing unrecognized TCP options, host OS TCP stacks <span class="bcp14">MUST</span> implement the following path traversal and fallback mechanisms:<a href="#section-2.2-2" class="pilcrow">¶</a></p>
+<div id="accecn-option-negotiation-and-option-drop-detection">
+<section id="section-2.1.2">
+          <h4 id="name-accecn-option-negotiation-a">
+<a href="#section-2.1.2" class="section-number selfRef">2.1.2. </a><a href="#name-accecn-option-negotiation-a" class="section-name selfRef">AccECN Option Negotiation and Option Drop Detection</a>
+          </h4>
+<p id="section-2.1.2-1">While basic ECN negotiation occurs via TCP flags, the Accurate ECN protocol utilizes the AccECN TCP Option (Kind 172 or 174) on data and ACK packets to feed back congestion counts (Section 3.2.3 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>). Because some network paths may drop packets containing unrecognized TCP options, host TCP stacks <span class="bcp14">MUST</span> implement active drop detection and option retransmission fallback:<a href="#section-2.1.2-1" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-2.2-3.1">
-            <p id="section-2.2-3.1.1"><strong>Detection during Handshake</strong>: If a TCP Server sends a SYN/ACK containing the AccECN option and does not receive an ACK (either due to packet loss or middlebox blocking), the server <span class="bcp14">SHOULD</span> retransmit the SYN/ACK without the AccECN option on the first retry. If this retransmission also times out, the server <span class="bcp14">SHOULD</span> retransmit the SYN/ACK with ECN flags cleared (AE,CWR,ECE) = (0,0,0) and no option, as specified in Section 3.2.3.2.2 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>.<a href="#section-2.2-3.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-2.1.2-2.1">
+              <p id="section-2.1.2-2.1.1">A TCP Server confirming AccECN support <span class="bcp14">SHOULD</span> include the AccECN option on the SYN/ACK. The TCP Client <span class="bcp14">SHOULD</span> include the AccECN option on the final ACK of the handshake and on its first data segment (Section 3.2.3.2.1 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>).<a href="#section-2.1.2-2.1.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-2.2-3.2">
-            <p id="section-2.2-3.2.1"><strong>Option Traversal Monitoring</strong>: The host TCP stack <span class="bcp14">MUST</span> actively monitor the traversal of packets containing the AccECN option. If the stack detects a high drop rate on packets carrying the option compared to optionless packets, it <span class="bcp14">MUST</span> disable the use of the AccECN option for the remainder of the half-connection (falling back to the TCP header <code>ACE</code> field for ECN feedback).<a href="#section-2.2-3.2.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-2.1.2-2.2">
+              <p id="section-2.1.2-2.2.1">If the server's initial SYN/ACK containing the AccECN option times out (potentially blocked by a middlebox), the server <span class="bcp14">SHOULD</span> retransmit the SYN/ACK without the AccECN option. If this first retransmission also times out, the server <span class="bcp14">SHOULD</span> fall back further by retransmitting the SYN/ACK with ECN flags cleared (AE,CWR,ECE) = (0,0,0) and no option, as specified in Section 3.2.3.2.2 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>.<a href="#section-2.1.2-2.2.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-2.2-3.3">
-            <p id="section-2.2-3.3.1"><strong>AccECN Option Usage</strong>: The host TCP stack <span class="bcp14">MUST NOT</span> include the AccECN option on every segment. The option <span class="bcp14">SHOULD</span> only be included on scheduled ACKs when one or more byte counters have changed since the previous ACK (Section 3.2.3.3 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>). If the available TCP option space is constrained (e.g., due to SACK options for packet loss, which <span class="bcp14">MUST</span> take priority), the AccECN option <span class="bcp14">MUST</span> be truncated or omitted entirely.<a href="#section-2.2-3.3.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-2.1.2-2.3">
+              <p id="section-2.1.2-2.3.1">If the client's first data segment containing the AccECN option fails to be acknowledged, the client <span class="bcp14">SHOULD</span> retransmit the data segment without the AccECN option (Section 3.2.3.2.2 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>).<a href="#section-2.1.2-2.3.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-2.2-3.4">
-            <p id="section-2.2-3.4.1"><strong>Fallback to Header Flags</strong>: When the AccECN option is stripped or disabled due to detected drops, ECN feedback continues to operate gracefully using only the standard 3-bit <code>ACE</code> field in the TCP header flags. Senders <span class="bcp14">MUST</span> be capable of extracting ECN feedback from the <code>ACE</code> field using the packet-to-byte estimation algorithm defined in Appendix A.3 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>.<a href="#section-2.2-3.4.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-2.1.2-2.4">
+              <p id="section-2.1.2-2.4.1">The host TCP stack <span class="bcp14">MUST</span> monitor packet loss for packets containing the AccECN option. If the loss probability of packets with the option is significantly higher than that of other data packets, the stack <span class="bcp14">MUST</span> disable the use of the AccECN option for that half-connection, falling back entirely to using the ACE field in the standard TCP header (which cannot be stripped or blocked).<a href="#section-2.1.2-2.4.1" class="pilcrow">¶</a></p>
 </li>
-        </ul>
+            <li class="normal" id="section-2.1.2-2.5">
+              <p id="section-2.1.2-2.5.1">The AccECN TCP option <span class="bcp14">MUST NOT</span> be sent on every packet. The option <span class="bcp14">SHOULD</span> only be included on scheduled ACKs when ECN byte counters have incremented since the last ACK (Section 3.2.3.3 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>). Furthermore, standard TCP options like SACK blocks (for loss recovery) <span class="bcp14">MUST</span> take precedence over the AccECN option; if option space is constrained, the AccECN option <span class="bcp14">MUST</span> be truncated or omitted.<a href="#section-2.1.2-2.5.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-2.1.2-2.6">
+              <p id="section-2.1.2-2.6.1">When the AccECN option is stripped or disabled due to detected drops, ECN feedback continues to operate gracefully using only the standard 3-bit <code>ACE</code> field in the TCP header flags. Senders <span class="bcp14">MUST</span> be capable of extracting ECN feedback from the <code>ACE</code> field using the packet-to-byte estimation algorithm defined in Appendix A.3 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>.<a href="#section-2.1.2-2.6.1" class="pilcrow">¶</a></p>
+</li>
+          </ul>
+</section>
+</div>
+<div id="implications-on-mobile-networks">
+<section id="section-2.1.3">
+          <h4 id="name-implications-on-mobile-netw">
+<a href="#section-2.1.3" class="section-number selfRef">2.1.3. </a><a href="#name-implications-on-mobile-netw" class="section-name selfRef">Implications on mobile networks</a>
+          </h4>
+<p id="section-2.1.3-1">Latency can be critical to mobile applications, and fallback paths dependent purely on retransmissions and timeouts can lead to a degraded user experience in scenarios where L4S is blocked. A host system that wants to be resilient to this <span class="bcp14">MAY</span> attempt a connectivity check to a known, L4S-supporting service. In case of check failure, the result can be used to turn off L4S negotiation attempts for a given network, represented by PLMN/APN (in carrier networks) or BSSID (in Wi-Fi networks). Additionally, the host system <span class="bcp14">MAY</span> maintain additional support disallowlists on a per-host, per-IP-range, or per-ASN basis. When maintaining such lists, entries should be retried after a preferred TTL (e.g., 7 days) and, if possible, indexed per network.<a href="#section-2.1.3-1" class="pilcrow">¶</a></p>
+</section>
+</div>
 </section>
 </div>
 <div id="socket-apis-for-udp">
-<section id="section-2.3">
+<section id="section-2.2">
         <h3 id="name-socket-apis-for-udp">
-<a href="#section-2.3" class="section-number selfRef">2.3. </a><a href="#name-socket-apis-for-udp" class="section-name selfRef">Socket APIs for UDP</a>
+<a href="#section-2.2" class="section-number selfRef">2.2. </a><a href="#name-socket-apis-for-udp" class="section-name selfRef">Socket APIs for UDP</a>
         </h3>
-<p id="section-2.3-1">To enable userspace transport stacks (such as QUIC and WebRTC) to utilize L4S, the OS <span class="bcp14">MUST</span> provide APIs that allow applications to:<a href="#section-2.3-1" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-2.3-2">
-<li id="section-2.3-2.1">
-            <p id="section-2.3-2.1.1">Set the ECN codepoint to <code>ECT(1)</code> <span>[<a href="#RFC9331" class="cite xref">RFC9331</a>]</span> on outgoing packets.<a href="#section-2.3-2.1.1" class="pilcrow">¶</a></p>
+<p id="section-2.2-1">To enable userspace transport stacks (such as QUIC and WebRTC) to utilize L4S, the OS <span class="bcp14">MUST</span> provide APIs that allow applications to:<a href="#section-2.2-1" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-2.2-2">
+<li id="section-2.2-2.1">
+            <p id="section-2.2-2.1.1">Set the ECN codepoint to <code>ECT(1)</code> <span>[<a href="#RFC9331" class="cite xref">RFC9331</a>]</span> on outgoing packets.<a href="#section-2.2-2.1.1" class="pilcrow">¶</a></p>
 </li>
-          <li id="section-2.3-2.2">
-            <p id="section-2.3-2.2.1">Read the ECN codepoints (specifically <code>CE</code> markings) of incoming packets.<a href="#section-2.3-2.2.1" class="pilcrow">¶</a></p>
+          <li id="section-2.2-2.2">
+            <p id="section-2.2-2.2.1">Read the ECN codepoints (specifically <code>CE</code> markings) of incoming packets.<a href="#section-2.2-2.2.1" class="pilcrow">¶</a></p>
 </li>
         </ol>
-<p id="section-2.3-3">These capabilities <span class="bcp14">MUST</span> be exposed via standard socket options (e.g., <code>IP_TOS</code> and <code>IPV6_TCLASS</code> for setting, and <code>IP_RECVTOS</code> and <code>IPV6_RECVTCLASS</code> via ancillary data for reading) and <span class="bcp14">MUST NOT</span> be restricted by default security policies for standard application sockets.<a href="#section-2.3-3" class="pilcrow">¶</a></p>
+<p id="section-2.2-3">These capabilities <span class="bcp14">MUST</span> be exposed via standard socket options (e.g., <code>IP_TOS</code> and <code>IPV6_TCLASS</code> for setting, and <code>IP_RECVTOS</code> and <code>IPV6_RECVTCLASS</code> via ancillary data for reading) and <span class="bcp14">MUST NOT</span> be restricted by default security policies for standard application sockets.<a href="#section-2.2-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1474,6 +1517,10 @@ Furthermore, middleboxes <span class="bcp14">MUST NOT</span> strip, modify, or d
 <dt id="RFC8174">[RFC8174]</dt>
         <dd>
 <span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8311">[RFC8311]</dt>
+        <dd>
+<span class="refAuthor">Black, D.</span>, <span class="refTitle">"Relaxing Restrictions on Explicit Congestion Notification (ECN) Experimentation"</span>, <span class="seriesInfo">RFC 8311</span>, <span class="seriesInfo">DOI 10.17487/RFC8311</span>, <time datetime="2018-01" class="refDate">January 2018</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8311">https://www.rfc-editor.org/rfc/rfc8311</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC9330">[RFC9330]</dt>
         <dd>
