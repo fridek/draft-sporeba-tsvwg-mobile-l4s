@@ -1,8 +1,8 @@
 <!-- regenerate: on (set to off if you edit this file) -->
 
-# TODO - Your title
+# Best Practices for L4S implementation for Mobile Devices
 
-This is the working area for the individual Internet-Draft, "TODO - Your title".
+This is the working area for the individual Internet-Draft, "Best Practices for L4S implementation for Mobile Devices".
 
 * [Editor's Copy](https://fridek.github.io/draft-sporeba-mobile-l4s/#go.draft-sporeba-mobile-l4s.html)
 * [Datatracker Page](https://datatracker.ietf.org/doc/draft-sporeba-mobile-l4s)
@@ -13,7 +13,7 @@ This is the working area for the individual Internet-Draft, "TODO - Your title".
 ## Contributing
 
 See the
-[guidelines for contributions](https://github.com/fridek/draft-sporeba-mobile-l4s/blob//CONTRIBUTING.md).
+[guidelines for contributions](https://github.com/fridek/draft-sporeba-mobile-l4s/blob/main/CONTRIBUTING.md).
 
 The contributing file also has tips on how to make contributions, if you
 don't already know how to do that.
