@@ -8,7 +8,7 @@
 <meta content="Sebastian Poreba" name="author">
 <meta content="Lorenzo Colitti" name="author">
 <meta content="
-       This document describes practical deployment considerations for Low Latency, Low Loss, and Scalable Throughput (L4S) in mobile networks. It defines the responsibilities of the host operating system, the link-layer (modem and WiFi) subsystems to ensure successful end-to-end low-latency communication. 
+       This document describes practical deployment considerations for Low Latency, Low Loss, and Scalable Throughput (L4S) in mobile devices. It defines the responsibilities of the host operating system, the link-layer (modem and WiFi) subsystems to ensure successful end-to-end low-latency communication. 
     " name="description">
 <meta content="xml2rfc 3.34.0" name="generator">
 <meta content="L4S" name="keyword">
@@ -1054,7 +1054,7 @@ svg {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Poreba &amp; Colitti</td>
-<td class="center">Expires 18 December 2026</td>
+<td class="center">Expires 19 December 2026</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1067,12 +1067,12 @@ svg {
 <dd class="internet-draft">draft-sporeba-mobile-l4s-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-06-16" class="published">16 June 2026</time>
+<time datetime="2026-06-17" class="published">17 June 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Best Current Practice</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2026-12-18">18 December 2026</time></dd>
+<dd class="expires"><time datetime="2026-12-19">19 December 2026</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1089,7 +1089,7 @@ svg {
 <h1 id="title">Best Practices for L4S implementation for Mobile Devices</h1>
 <section id="section-abstract">
       <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
-<p id="section-abstract-1">This document describes practical deployment considerations for Low Latency, Low Loss, and Scalable Throughput (L4S) in mobile networks. It defines the responsibilities of the host operating system, the link-layer (modem and WiFi) subsystems to ensure successful end-to-end low-latency communication.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+<p id="section-abstract-1">This document describes practical deployment considerations for Low Latency, Low Loss, and Scalable Throughput (L4S) in mobile devices. It defines the responsibilities of the host operating system, the link-layer (modem and WiFi) subsystems to ensure successful end-to-end low-latency communication.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
 </section>
 <section class="note rfcEditorRemove" id="section-note.1">
       <h2 id="name-about-this-document">
@@ -1121,7 +1121,7 @@ svg {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 18 December 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 19 December 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1168,13 +1168,7 @@ svg {
                 <p id="section-toc.1-1.2.2.2.1"><a href="#section-2.2" class="auto internal xref">2.2</a>.  <a href="#name-tcp-support-detection-and-b" class="internal xref">TCP support detection and bootstrapping</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.2.2.1">
-                    <p id="section-toc.1-1.2.2.2.2.1.1"><a href="#section-2.2.1" class="auto internal xref">2.2.1</a>.  <a href="#name-per-connection-ecn-negotiat" class="internal xref">Per-connection ECN Negotiation for TCP/IP Frames</a></p>
-</li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.2.2.2">
-                    <p id="section-toc.1-1.2.2.2.2.2.1"><a href="#section-2.2.2" class="auto internal xref">2.2.2</a>.  <a href="#name-per-connection-accecn-optio" class="internal xref">Per-connection AccECN Option Negotiation and Option Drop Detection</a></p>
-</li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.2.2.3">
-                    <p id="section-toc.1-1.2.2.2.2.3.1"><a href="#section-2.2.3" class="auto internal xref">2.2.3</a>.  <a href="#name-per-network-detection-and-l" class="internal xref">Per-network detection and latency mitigation</a></p>
+                    <p id="section-toc.1-1.2.2.2.2.1.1"><a href="#section-2.2.1" class="auto internal xref">2.2.1</a>.  <a href="#name-per-network-detection-and-l" class="internal xref">Per-network detection and latency mitigation</a></p>
 </li>
                 </ul>
 </li>
@@ -1243,8 +1237,8 @@ svg {
       <h2 id="name-introduction">
 <a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
       </h2>
-<p id="section-1-1">L4S (Low Latency, Low Loss, Scalable Throughput) <span>[<a href="#RFC9330" class="cite xref">RFC9330</a>]</span> offers a framework to significantly reduce queuing delay while maintaining high throughput. Mobile devices often have to react to quickly changing connectivity conditions and may be subject to variable throughput and connection quality. This can cause large variations in user-perceived latency and greater bufferbloat than fixed devices. This document outlines best current practices for implementing L4S in mobile devices.<a href="#section-1-1" class="pilcrow">¶</a></p>
-<p id="section-1-2">Deploying L4S in a mobile ecosystem requires co-operation across multiple layers: the application, the host operating system (OS), and link-layer drivers and firmware (e.g., Wi-Fi and cellular modem), and the core network middleboxes <span>[<a href="#RFC3234" class="cite xref">RFC3234</a>]</span>. This document outlines practical deployment considerations and requirements for each of these subsystems to achieve reliable, low-latency performance in the field.<a href="#section-1-2" class="pilcrow">¶</a></p>
+<p id="section-1-1">L4S (Low Latency, Low Loss, Scalable Throughput) <span>[<a href="#RFC9330" class="cite xref">RFC9330</a>]</span> offers a framework to significantly reduce queuing delay while maintaining high throughput. Mobile devices often have to react to quickly changing connectivity conditions and may be subject to variable throughput and connection quality. This can cause large variations in user-perceived latency and greater bufferbloat than in other devices. This document outlines best current practices for implementing L4S in mobile devices.<a href="#section-1-1" class="pilcrow">¶</a></p>
+<p id="section-1-2">Deploying L4S in a mobile ecosystem requires co-operation across multiple layers: the application, the host operating system (OS), and link-layer drivers and firmware (e.g., Wi-Fi and cellular modem), and the network. This document outlines practical deployment considerations and requirements for each of these subsystems to achieve reliable, low-latency performance in the field.<a href="#section-1-2" class="pilcrow">¶</a></p>
 <div id="conventions-and-definitions">
 <section id="section-1.1">
         <h3 id="name-conventions-and-definitions">
@@ -1269,7 +1263,7 @@ appear in all capitals, as shown here.<a href="#section-1.1-1" class="pilcrow">�
         <h3 id="name-socket-apis-for-udp">
 <a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-socket-apis-for-udp" class="section-name selfRef">Socket APIs for UDP</a>
         </h3>
-<p id="section-2.1-1">To enable userspace transport stacks (such as QUIC and WebRTC) to utilize L4S, the OS <span class="bcp14">MUST</span> provide APIs that allow applications to:<a href="#section-2.1-1" class="pilcrow">¶</a></p>
+<p id="section-2.1-1">To enable UDP-based transport stacks (such as QUIC) to utilize L4S, the OS <span class="bcp14">MUST</span> provide APIs that allow applications to:<a href="#section-2.1-1" class="pilcrow">¶</a></p>
 <ol start="1" type="1" class="normal type-1" id="section-2.1-2">
 <li id="section-2.1-2.1">
             <p id="section-2.1-2.1.1">Set the ECN codepoint to <code>ECT(1)</code> <span>[<a href="#RFC9331" class="cite xref">RFC9331</a>]</span> on outgoing packets.<a href="#section-2.1-2.1.1" class="pilcrow">¶</a></p>
@@ -1286,63 +1280,17 @@ appear in all capitals, as shown here.<a href="#section-1.1-1" class="pilcrow">�
         <h3 id="name-tcp-support-detection-and-b">
 <a href="#section-2.2" class="section-number selfRef">2.2. </a><a href="#name-tcp-support-detection-and-b" class="section-name selfRef">TCP support detection and bootstrapping</a>
         </h3>
-<p id="section-2.2-1">To deploy L4S for TCP, host operating systems and link-layers must negotiate ECN support and verify path integrity. This process is divided into ECN negotiation on IP frames, and Accurate ECN option negotiation and drop detection.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
-<div id="per-connection-ecn-negotiation-for-tcpip-frames">
-<section id="section-2.2.1">
-          <h4 id="name-per-connection-ecn-negotiat">
-<a href="#section-2.2.1" class="section-number selfRef">2.2.1. </a><a href="#name-per-connection-ecn-negotiat" class="section-name selfRef">Per-connection ECN Negotiation for TCP/IP Frames</a>
-          </h4>
-<p id="section-2.2.1-1">Negotiation of ECN support for TCP follows the Classic ECN setup defined in <span>[<a href="#RFC3168" class="cite xref">RFC3168</a>]</span> and recapped in Section 1.4 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>. This is based on the two ECN bits in the IP header (codepoints <code>ECT(0)</code>, <code>ECT(1)</code>, <code>CE</code>, and <code>Not-ECT</code>) and the ECN flags in the TCP header (AE, CWR, and ECE).<a href="#section-2.2.1-1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-2.2.1-2.1">
-              <p id="section-2.2.1-2.1.1">In accordance with Section 6.1.1 of <span>[<a href="#RFC3168" class="cite xref">RFC3168</a>]</span>, ECN-setup SYN packets <span class="bcp14">MUST NOT</span> have ECN bits set in the IP header (i.e. they <span class="bcp14">MUST</span> be marked <code>Not-ECT</code>), unless participating in specific experimental TCP setups <span>[<a href="#RFC8311" class="cite xref">RFC8311</a>]</span>. The client <span class="bcp14">MUST</span> set the TCP header flags (AE, CWR, ECE) to (1, 1, 1) to signal AccECN support (Section 3.1.1 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>).<a href="#section-2.2.1-2.1.1" class="pilcrow">¶</a></p>
-</li>
-            <li class="normal" id="section-2.2.1-2.2">
-              <p id="section-2.2.1-2.2.1">If the server supports AccECN, it <span class="bcp14">MUST</span> respond with a SYN/ACK containing the TCP flags (AE, CWR, ECE) set to one of the valid AccECN combinations listed in Section 3.1.2 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span> (typically (0, 1, 0) or (0, 1, 1)). The IP header ECN bits of the SYN/ACK <span class="bcp14">SHOULD</span> be marked <code>Not-ECT</code> or <code>ECT(0)</code> depending on the server's local configuration.<a href="#section-2.2.1-2.2.1" class="pilcrow">¶</a></p>
-</li>
-            <li class="normal" id="section-2.2.1-2.3">
-              <p id="section-2.2.1-2.3.1">The client completes ECN negotiation on the final ACK. If ECN/AccECN support was successfully negotiated during the handshake, subsequent data packets <span class="bcp14">MUST</span> be sent with ECN bits set to <code>ECT(1)</code> in the IP header to request L4S treatment (Section 4.1 of <span>[<a href="#RFC9331" class="cite xref">RFC9331</a>]</span>).<a href="#section-2.2.1-2.3.1" class="pilcrow">¶</a></p>
-</li>
-            <li class="normal" id="section-2.2.1-2.4">
-              <p id="section-2.2.1-2.4.1">To defend against faulty middleboxes that drop SYN packets containing ECN flags (Section 6.1.1.1 of <span>[<a href="#RFC3168" class="cite xref">RFC3168</a>]</span>), the client TCP stack <span class="bcp14">MUST</span> implement a fallback mechanism: if the initial SYN times out, the client <span class="bcp14">SHOULD</span> retry the ECN-setup SYN at least once before falling back to sending subsequent SYNs with ECN flags cleared (AE,CWR,ECE) = (0,0,0) (Section 3.1.4.1 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>).<a href="#section-2.2.1-2.4.1" class="pilcrow">¶</a></p>
-</li>
-          </ul>
-</section>
-</div>
-<div id="per-connection-accecn-option-negotiation-and-option-drop-detection">
-<section id="section-2.2.2">
-          <h4 id="name-per-connection-accecn-optio">
-<a href="#section-2.2.2" class="section-number selfRef">2.2.2. </a><a href="#name-per-connection-accecn-optio" class="section-name selfRef">Per-connection AccECN Option Negotiation and Option Drop Detection</a>
-          </h4>
-<p id="section-2.2.2-1">While basic ECN negotiation occurs via TCP flags, the Accurate ECN protocol utilizes the AccECN TCP Option (Kind 172 or 174) on data and ACK packets to feed back congestion counts (Section 3.2.3 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>). Because some network paths may drop packets containing unrecognized TCP options, host TCP stacks <span class="bcp14">MUST</span> implement active drop detection and option retransmission fallback:<a href="#section-2.2.2-1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-2.2.2-2.1">
-              <p id="section-2.2.2-2.1.1">A TCP Server confirming AccECN support <span class="bcp14">SHOULD</span> include the AccECN option on the SYN/ACK. The TCP Client <span class="bcp14">SHOULD</span> include the AccECN option on the final ACK of the handshake and on its first data segment (Section 3.2.3.2.1 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>).<a href="#section-2.2.2-2.1.1" class="pilcrow">¶</a></p>
-</li>
-            <li class="normal" id="section-2.2.2-2.2">
-              <p id="section-2.2.2-2.2.1">If the server's initial SYN/ACK containing the AccECN option times out (potentially blocked by a middlebox), the server <span class="bcp14">SHOULD</span> retransmit the SYN/ACK without the AccECN option. If this first retransmission also times out, the server <span class="bcp14">SHOULD</span> fall back further by retransmitting the SYN/ACK with ECN flags cleared (AE,CWR,ECE) = (0,0,0) and no option, as specified in Section 3.2.3.2.2 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>.<a href="#section-2.2.2-2.2.1" class="pilcrow">¶</a></p>
-</li>
-            <li class="normal" id="section-2.2.2-2.3">
-              <p id="section-2.2.2-2.3.1">If the client's first data segment containing the AccECN option fails to be acknowledged, the client <span class="bcp14">SHOULD</span> retransmit the data segment without the AccECN option (Section 3.2.3.2.2 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>).<a href="#section-2.2.2-2.3.1" class="pilcrow">¶</a></p>
-</li>
-            <li class="normal" id="section-2.2.2-2.4">
-              <p id="section-2.2.2-2.4.1">The host TCP stack <span class="bcp14">MUST</span> monitor packet loss for packets containing the AccECN option. If the loss probability of packets with the option is significantly higher than that of other data packets, the stack <span class="bcp14">MUST</span> disable the use of the AccECN option for that half-connection, falling back entirely to using the ACE field in the standard TCP header (which cannot be stripped or blocked).<a href="#section-2.2.2-2.4.1" class="pilcrow">¶</a></p>
-</li>
-            <li class="normal" id="section-2.2.2-2.5">
-              <p id="section-2.2.2-2.5.1">The AccECN TCP option <span class="bcp14">MUST NOT</span> be sent on every packet. The option <span class="bcp14">SHOULD</span> only be included on scheduled ACKs when ECN byte counters have incremented since the last ACK (Section 3.2.3.3 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>). Furthermore, standard TCP options like SACK blocks (for loss recovery) <span class="bcp14">MUST</span> take precedence over the AccECN option; if option space is constrained, the AccECN option <span class="bcp14">MUST</span> be truncated or omitted.<a href="#section-2.2.2-2.5.1" class="pilcrow">¶</a></p>
-</li>
-            <li class="normal" id="section-2.2.2-2.6">
-              <p id="section-2.2.2-2.6.1">When the AccECN option is stripped or disabled due to detected drops, ECN feedback continues to operate gracefully using only the standard 3-bit <code>ACE</code> field in the TCP header flags. Senders <span class="bcp14">MUST</span> be capable of extracting ECN feedback from the <code>ACE</code> field using the packet-to-byte estimation algorithm defined in Appendix A.3 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>.<a href="#section-2.2.2-2.6.1" class="pilcrow">¶</a></p>
-</li>
-          </ul>
-</section>
-</div>
+<p id="section-2.2-1">To deploy receive-side L4S for TCP, host operating systems and link-layers must negotiate ECN support and verify path integrity.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
+<p id="section-2.2-2">A client that wants to be resilient to networks that don't support L4S <span class="bcp14">MUST</span> follow the negotiation steps described in <span>[<a href="#RFC3168" class="cite xref">RFC3168</a>]</span>, <span>[<a href="#RFC8311" class="cite xref">RFC8311</a>]</span>, <span>[<a href="#RFC9331" class="cite xref">RFC9331</a>]</span> and <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>}
+Negotiation of ECN support for TCP follows the Classic ECN setup defined in Section 6.1.1 <span>[<a href="#RFC3168" class="cite xref">RFC3168</a>]</span> and recapped in Section 1.4 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>.
+Negotiation of AccECN support is defined in Section 3.1 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span><a href="#section-2.2-2" class="pilcrow">¶</a></p>
+<p id="section-2.2-3">These negotations <span class="bcp14">MUST</span> include the retry mechanisms as described by Section 3.1.4 of and Section 3.2.3.2.2 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>.<a href="#section-2.2-3" class="pilcrow">¶</a></p>
 <div id="per-network-detection-and-latency-mitigation">
-<section id="section-2.2.3">
+<section id="section-2.2.1">
           <h4 id="name-per-network-detection-and-l">
-<a href="#section-2.2.3" class="section-number selfRef">2.2.3. </a><a href="#name-per-network-detection-and-l" class="section-name selfRef">Per-network detection and latency mitigation</a>
+<a href="#section-2.2.1" class="section-number selfRef">2.2.1. </a><a href="#name-per-network-detection-and-l" class="section-name selfRef">Per-network detection and latency mitigation</a>
           </h4>
-<p id="section-2.2.3-1">Latency can be critical to mobile applications, and fallback paths dependent on retransmissions and timeouts can lead to a degraded user experience in flows where L4S is blocked. A host system that wants to be resilient to this <span class="bcp14">MAY</span> attempt a connectivity check to a known, L4S-supporting service. In case of check failure, the result can be used to turn off L4S negotiation attempts for a given network, represented by PLMN/APN (in carrier networks) or BSSID (in Wi-Fi networks). Additionally, the host system <span class="bcp14">MAY</span> maintain additional L4S support disallowlists on a per-host, per-IP-range, or per-ASN basis. When maintaining such lists, entries should be retried after a preferred TTL (e.g., 7 days) and preferably indexed per network to disambiguate between host and path support.<a href="#section-2.2.3-1" class="pilcrow">¶</a></p>
+<p id="section-2.2.1-1">Latency can be critical to mobile applications, and fallback paths dependent on retransmissions and timeouts can lead to a degraded user experience in flows where L4S fails to be negotiated in any of the steps listed in 2.2.1. A host system that wants to be resilient to this <span class="bcp14">MAY</span> attempt a connectivity check to a known, L4S-supporting service. In case of check failure, the result can be used to turn off L4S negotiation attempts for a given network, represented by PLMN/APN (in carrier networks) or BSSID (in Wi-Fi networks). Additionally, the host system <span class="bcp14">MAY</span> maintain additional L4S support cache on a per-host or per-IP-address, or other basis. When maintaining such lists, entries should be retired after a preferred TTL (e.g., 7 days) and preferably indexed per network to disambiguate between host and path L4S support.<a href="#section-2.2.1-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1509,10 +1457,6 @@ Furthermore, middleboxes <span class="bcp14">MUST NOT</span> strip, modify, or d
 <dt id="RFC3168">[RFC3168]</dt>
         <dd>
 <span class="refAuthor">Ramakrishnan, K.</span>, <span class="refAuthor">Floyd, S.</span>, and <span class="refAuthor">D. Black</span>, <span class="refTitle">"The Addition of Explicit Congestion Notification (ECN) to IP"</span>, <span class="seriesInfo">RFC 3168</span>, <span class="seriesInfo">DOI 10.17487/RFC3168</span>, <time datetime="2001-09" class="refDate">September 2001</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc3168">https://www.rfc-editor.org/rfc/rfc3168</a>&gt;</span>. </dd>
-<dd class="break"></dd>
-<dt id="RFC3234">[RFC3234]</dt>
-        <dd>
-<span class="refAuthor">Carpenter, B.</span> and <span class="refAuthor">S. Brim</span>, <span class="refTitle">"Middleboxes: Taxonomy and Issues"</span>, <span class="seriesInfo">RFC 3234</span>, <span class="seriesInfo">DOI 10.17487/RFC3234</span>, <time datetime="2002-02" class="refDate">February 2002</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc3234">https://www.rfc-editor.org/rfc/rfc3234</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC8174">[RFC8174]</dt>
         <dd>
