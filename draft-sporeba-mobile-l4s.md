@@ -32,6 +32,10 @@ author:
     fullname: Lorenzo Colitti
     organization: Google LLC
     email: lorenzo@google.com
+ -
+    fullname: Sandeep Irlanki
+    organization: Samsung R&D
+    email: irlanki.s@samsung.com
 
 normative:
   RFC3168:
@@ -40,6 +44,7 @@ normative:
   RFC9331:
   RFC9768:
   RFC9956:
+  RFC6679:
 
 informative:
   I-D.livingood-low-latency-deployment:
@@ -88,6 +93,15 @@ These negotiations MUST include the retry mechanisms described in Section 3.1.4 
 ### Per-network detection and latency mitigation
 
 Latency can be critical to mobile applications, and fallback paths dependent on retransmissions and timeouts can lead to a degraded user experience in flows where L4S fails to be negotiated in any of the steps listed in Section 2.2. A host system that wants to be resilient to this MAY attempt a connectivity check to a known, L4S-supporting service. In case of check failure, the result can be used to turn off L4S negotiation attempts for a given network, represented by PLMN/APN (in carrier networks) or BSSID (in Wi-Fi networks). Additionally, the host system MAY maintain additional L4S support cache on a per-host or per-IP-address, or other basis. When maintaining such lists, entries should be retired after a preferred TTL (e.g., 7 days) and preferably indexed per network to disambiguate between host and path L4S support.
+
+## Transport-Layer Congestion Feedback Requirements
+
+To preserve the integrity of the end-to-end L4S control loop, endpoints marking egress traffic as `ECT(1)` MUST implement active, protocol-compliant congestion feedback. Network-side traffic prioritization or downstream bandwidth allocation multipliers alone do not constitute an L4S deployment if the feedback loop is broken.
+
+Upon receiving packets marked with the Congestion Experienced (`CE`) codepoint, the receiving endpoint MUST record and report these congestion indicators back to the sender using the appropriate transport- or session-level signaling, such as:
+
+* **TCP Transports:** The network stack MUST implement Accurate ECN (AccECN) feedback. The receiver MUST process and reflect congestion markings back to the sender using the 3-bit Accurate ECN (ACE) field in the TCP header as specified in Section 3.2.2 of {{RFC9768}}. The implementation MAY also support the AccECN TCP Options specified in Section 3.2.3 of {{RFC9768}}.
+* **UDP-Based Real-Time Transports:** Applications or media frameworks utilizing RTP over UDP (such as WebRTC implementations) MUST implement the feedback mechanisms specified in {{RFC6679}}. The receiver MUST generate and transmit the RTP/AVPF ECN feedback packet format specified in Section 5.1 of {{RFC6679}} back to the sender, and send the RTCP XR summary report block specified in Section 5.2 of {{RFC6679}}.
 
 # Link-layer Subsystems Requirements
 
