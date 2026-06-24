@@ -96,6 +96,15 @@ These negotiations MUST include the retry mechanisms described in Section 3.1.4 
 
 Latency can be critical to mobile applications, and fallback paths dependent on retransmissions and timeouts can lead to a degraded user experience in flows where L4S fails to be negotiated in any of the steps listed in Section 2.2. A host system that wants to be resilient to this MAY attempt a connectivity check to a known, L4S-supporting service. In case of check failure, the result can be used to turn off L4S negotiation attempts for a given network, represented by PLMN/APN (in carrier networks) or BSSID (in Wi-Fi networks). Additionally, the host system MAY maintain additional L4S support cache on a per-host or per-IP-address, or other basis. When maintaining such lists, entries should be retired after a preferred TTL (e.g., 7 days) and preferably indexed per network to disambiguate between host and path L4S support.
 
+## Transport-Layer Feedback Prerequisites {#transport-feedback-prerequisites}
+
+To ensure a compliant L4S deployment, transport endpoints (hosts and servers) MUST conform to the baseline protocol prerequisites for end-to-end feedback loops (including, but not limited to, the following core implementations):
+
+* **TCP Transports:** MUST utilize Accurate ECN (AccECN) feedback loop mechanics, processing and reflecting congestion markings using the 3-bit Accurate ECN (ACE) field in the TCP header as specified in Section 3.2.2 of {{RFC9768}}. The implementation MAY also support the AccECN TCP Options specified in Section 3.2.3 of {{RFC9768}}.
+* **UDP-Based Real-Time Transports:** Applications or media frameworks utilizing RTP over UDP (such as WebRTC implementations) MUST implement high-fidelity feedback loops utilizing the per-RTP packet congestion control feedback report format specified in Section 3.1 of {{RFC8888}} alongside the session negotiation and signaling parameters specified in {{RFC6679}}. The receiver MUST generate and transmit the RTP/AVPF ECN feedback packet format specified in Section 5.1 of {{RFC6679}} back to the sender, and send the RTCP XR summary report block specified in Section 5.2 of {{RFC6679}}.
+* **QUIC Transports:** MUST utilize the native, fine-grained ECN feedback loops built into the IETF QUIC transport protocol layer as specified in {{RFC9000}}.
+* **Other Transport Protocols:** Other transport layers (such as SCTP or DCCP) MUST utilize a fine-grained, protocol-compliant feedback loop mechanism capable of accurately reporting the extent of congestion markings back to the sender as specified in Section 4.2 of {{RFC9331}}.
+
 # Link-layer Subsystems Requirements
 
 The link-layer (modem and WiFi) subsystems manage the link-layer transmission over the radio interface and perform significant queueing on the uplink path.
@@ -162,16 +171,9 @@ Middleboxes MUST transparently forward `SYN` and `SYN-ACK` packets that negotiat
 
 ## Mitigation Against Non-Compliant Prioritization
 
-Network infrastructure nodes MUST NOT act on `ECT(1)` flags to prioritize traffic in alternative, non-compliant ways unless a valid end-to-end loop is actively maintained—where the network nodes execute compliant congestion marking and the transport endpoints record and reflect those markings in line with the transport-specific requirements specified in Section 4.2 of {{RFC9331}}.
+Network infrastructure nodes MUST NOT act on `ECT(1)` flags to prioritize traffic in alternative, non-compliant ways unless a valid end-to-end feedback loop is actively maintained—where the network nodes execute compliant congestion marking and the transport endpoints record and reflect those markings in line with the transport-specific requirements specified in Section 4.2 of {{RFC9331}}.
 
-Modern network deployments MUST NOT be marketed or operated as supporting L4S if they prioritize traffic via alternative heuristics (such as bandwidth allocation multipliers) without enforcing or verifying true, end-to-end transport-layer feedback loop compliance.
-
-To ensure a compliant L4S deployment, the associated end-to-end transport loops MUST conform to the baseline protocol prerequisites (including, but not limited to, the following core implementations):
-
-* **TCP Transports:** MUST utilize Accurate ECN (AccECN) feedback loop mechanics, processing and reflecting congestion markings using the 3-bit Accurate ECN (ACE) field in the TCP header as specified in Section 3.2.2 of {{RFC9768}}. The implementation MAY also support the AccECN TCP Options specified in Section 3.2.3 of {{RFC9768}}.
-* **UDP-Based Real-Time Transports:** Applications or media frameworks utilizing RTP over UDP (such as WebRTC implementations) MUST implement high-fidelity feedback loops utilizing the per-RTP packet congestion control feedback report format specified in Section 3.1 of {{RFC8888}} alongside the session negotiation and signaling parameters specified in {{RFC6679}}. The receiver MUST generate and transmit the RTP/AVPF ECN feedback packet format specified in Section 5.1 of {{RFC6679}} back to the sender, and send the RTCP XR summary report block specified in Section 5.2 of {{RFC6679}}.
-* **QUIC Transports:** MUST utilize the native, fine-grained ECN feedback loops built into the IETF QUIC transport protocol layer as specified in {{RFC9000}}.
-* **Other Transport Protocols:** Other transport layers (such as SCTP or DCCP) MUST utilize a fine-grained, protocol-compliant feedback loop mechanism capable of accurately reporting the extent of congestion markings back to the sender as specified in Section 4.2 of {{RFC9331}}.
+Modern network deployments MUST NOT be marketed or operated as supporting L4S if they prioritize traffic via alternative heuristics (such as bandwidth allocation multipliers) without enforcing or verifying true, end-to-end transport-layer feedback loop compliance as detailed in (#transport-feedback-prerequisites).
 
 # Security Considerations
 
