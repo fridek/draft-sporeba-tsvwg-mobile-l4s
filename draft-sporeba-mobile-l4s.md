@@ -39,10 +39,7 @@ author:
 
 normative:
   RFC3168:
-  RFC6679:
   RFC8311:
-  RFC8888:
-  RFC9000:
   RFC9330:
   RFC9331:
   RFC9768:
@@ -54,13 +51,13 @@ informative:
 ...
 --- abstract
 
-This document describes practical deployment considerations for Low Latency, Low Loss, and Scalable Throughput (L4S) in mobile devices. It defines the responsibilities of the host operating system, the link-layer (modem and WiFi) subsystems to ensure successful end-to-end low-latency communication.
+This document describes practical deployment considerations for Low Latency, Low Loss, and Scalable Throughput (L4S) in mobile devices. It defines the responsibilities of the host operating system, the link-layer (modem and WiFi) subsystems and Flow-Preserving Packet Processors to ensure successful end-to-end low-latency communication.
 
 --- middle
 
 # Introduction
 
-L4S (Low Latency, Low Loss, Scalable Throughput) {{RFC9330}} offers a framework to significantly reduce queuing delay while maintaining high throughput. Mobile devices often have to react to quickly changing connectivity conditions and may be subject to variable throughput and connection quality. This can cause large variations in user-perceived latency and greater bufferbloat than in other devices. This document outlines best current practices for implementing L4S in mobile devices.
+L4S (Low Latency, Low Loss, Scalable Throughput) {{RFC9330}} offers a framework to significantly reduce queuing delay while maintaining high throughput. Mobile devices often have to react to quickly changing connectivity conditions and may be subject to variable throughput and connection quality. This can cause large variations in user-perceived latency and greater bufferbloat than in other devices. This document outlines best current practices for implementing L4S for mobile devices.
 
 Deploying L4S in a mobile ecosystem requires co-operation across multiple layers: the application, the host operating system (OS), and link-layer drivers and firmware (e.g., Wi-Fi and cellular modem), and the network. This document outlines practical deployment considerations and requirements for each of these subsystems to achieve reliable, low-latency performance in the field.
 
@@ -68,6 +65,8 @@ Deploying L4S in a mobile ecosystem requires co-operation across multiple layers
 ## Conventions and Definitions
 
 {::boilerplate bcp14-tagged}
+
+Flow-Preserving Packet Processors are any core network elements (such as the UPF and PGW) and routers, typically a part of mobile carrier or ISP infrastructure. This document does not aim to offer operational advice to backbone, data center or server equipment. These concerns are covered in other documents which detail the communications in non-mobile networks.
 
 # Host Operating System Requirements
 
@@ -94,20 +93,11 @@ These negotiations MUST include the retry mechanisms described in Section 3.1.4 
 
 ### Per-network detection and latency mitigation
 
-Latency can be critical to mobile applications, and fallback paths dependent on retransmissions and timeouts can lead to a degraded user experience in flows where L4S fails to be negotiated in any of the steps listed in Section 2.2. A host system that wants to be resilient to this MAY attempt a connectivity check to a known, L4S-supporting service. In case of check failure, the result can be used to turn off L4S negotiation attempts for a given network, represented by PLMN/APN (in carrier networks) or BSSID (in Wi-Fi networks). Additionally, the host system MAY maintain additional L4S support cache on a per-host or per-IP-address, or other basis. When maintaining such lists, entries should be retired after a preferred TTL (e.g., 7 days) and preferably indexed per network to disambiguate between host and path L4S support.
-
-## Transport-Layer Feedback Prerequisites {#transport-feedback-prerequisites}
-
-To ensure a compliant L4S deployment, transport endpoints (hosts and servers) MUST conform to the baseline protocol prerequisites for end-to-end feedback loops (including, but not limited to, the following core implementations):
-
-* **TCP Transports:** MUST utilize Accurate ECN (AccECN) feedback loop mechanics, processing and reflecting congestion markings using the 3-bit Accurate ECN (ACE) field in the TCP header as specified in Section 3.2.2 of {{RFC9768}}. The implementation MAY also support the AccECN TCP Options specified in Section 3.2.3 of {{RFC9768}}.
-* **UDP-Based Real-Time Transports:** Applications or media frameworks utilizing RTP over UDP (such as WebRTC implementations) MUST implement high-fidelity feedback loops utilizing the per-RTP packet congestion control feedback report format specified in Section 3.1 of {{RFC8888}} alongside the session negotiation and signaling parameters specified in {{RFC6679}}. The receiver MUST generate and transmit the RTP/AVPF ECN feedback packet format specified in Section 5.1 of {{RFC6679}} back to the sender, and send the RTCP XR summary report block specified in Section 5.2 of {{RFC6679}}.
-* **QUIC Transports:** MUST utilize the native, fine-grained ECN feedback loops built into the IETF QUIC transport protocol layer as specified in {{RFC9000}}.
-* **Other Transport Protocols:** Other transport layers (such as SCTP or DCCP) MUST utilize a fine-grained, protocol-compliant feedback loop mechanism capable of accurately reporting the extent of congestion markings back to the sender as specified in Section 4.2 of {{RFC9331}}.
+Latency can be critical to mobile applications, and fallback paths dependent on retransmissions and timeouts can lead to a degraded user experience in flows where L4S fails to be negotiated in any of the steps listed in Section 2.2. A host system that wants to be resilient to this MAY attempt a connectivity check to a known, L4S-supporting service. In case of check failure, the result can be used to turn off L4S negotiation attempts for a given network, represented by PLMN/APN (in carrier networks) or BSSID (in Wi-Fi networks). Additionally, the host system MAY maintain additional L4S support cache on a per-host or per-IP-address, or other basis. When maintaining such lists, entries should be retired after a preferred TTL (e.g. 7 days) and preferably indexed per network to disambiguate between host and path L4S support.
 
 # Link-layer Subsystems Requirements
 
-The link-layer (modem and WiFi) subsystems manage the link-layer transmission over the radio interface and perform significant queueing on the uplink path.
+The link-layer (modem and WiFi) subsystems manage the link-layer transmission over the radio interface and perform significant queueing on the uplink and downlink path.
 
 ## Link-layer inbound packet reordering
 
@@ -128,7 +118,7 @@ Some modem systems are known to already support high-priority and low-priority q
 *  **High-Priority Queue:** For signaling, IMS voice (VoLTE/VoNR), and other critical real-time traffic.
 *  **Low-Priority Queue:** For queue-building traffic (e.g., CUBIC/Reno) and bulk data.
 
-The scheduler MUST prioritize the Low-Latency Queue, but SHOULD use a scheduling algorithm (e.g., Weighted Fair Queueing) that prevents starvation of other queues.
+It MIGHT be desirable to prioritise high-priority traffic (e.g. signaling) ahead of Low-Latency traffic to prevent starvation of other queues in the abundance of L4S packets. Such prioritisation SHOULD use a scheduling algorithm (e.g., Weighted Fair Queueing) and aim to minimize the queue buildup in the Low-Latency queue.
 
 ## Packet Classification
 
@@ -146,38 +136,37 @@ The link-layer uplink buffer is often a bottleneck due to cellular grant schedul
 *  If the sojourn time of a packet in the L4S queue exceeds a shallow threshold (e.g., 1 ms to 5 ms), the modem MUST mark the packet as `CE` in the IP header before transmitting it, rather than dropping it.
 *  Packets MUST only be dropped if the queue reaches the maximum designated size.
 
-## Defense Against Misbehaving Traffic (Queue Protection)
+## Defense Against Misbehaving Traffic (Queue Protection) {#defense-against-misbehaving-traffic}
 Applications may mark their traffic as NQB or `ECT(1)` without implementing L4S congestion control, causing queue build-up in the low-latency queue.
 
-*  The modem MUST enforce a strict size limit on the Low-Latency Queue (e.g. 16kB). If the queue is full, incoming packets MUST be dropped.
+*  The modem MUST enforce a strict size limit on the Low-Latency Queue. If the queue is full, incoming packets MUST be dropped.
 *  The modem SHOULD monitor queue build-up and latency contributions of individual flows within the L4S queue.
-*  If a flow is detected to be queue-building (e.g., contributing to sustained queue latency above the marking threshold without responding to CE marks), the modem MUST demote the flow and redirect its packets to a different queue.
+*  If a flow is detected to be queue-building (e.g., contributing to sustained queue latency above the marking threshold without responding to CE marks), the modem SHOULD demote the flow and redirect its packets to a different queue.
 
 ## Transparency and Bleach Prevention
-The modem MUST NOT modify the ECN bits, DSCP flags, or AccECN TCP options (172 and 174) on low-latency-queue transit traffic, except for performing standard CE marking when congested.
+The modem MUST NOT modify the ECN bits, DSCP flags, or AccECN TCP options (172 and 174) on low-latency-queue transit traffic, except for performing standard CE marking in the event of queue buildup.
 
-# Middlebox Requirements
+# Flow-Preserving Packet Processors Requirements
 
-Middleboxes include cellular core network elements (such as the UPF and PGW), firewalls, NATs, and deep packet inspection (DPI) appliances.
-
-Middleboxes MUST NOT perform network-based classification or rewrite ECN/DSCP markings based on traffic heuristics or DPI. In accordance with {{I-D.livingood-low-latency-deployment}}, active classification decisions MUST be left to the application endpoints, and middleboxes MUST restrict their role to passive, transparent forwarding.
+Flow-Preserving Packet Processors MUST NOT perform network-based classification or rewrite ECN/DSCP markings based on traffic heuristics or DPI. In accordance with {{I-D.livingood-low-latency-deployment}}, active classification decisions MUST be left to the application endpoints, and on-path devices MUST restrict their role to marking the ECN bits in the event of a queue forming.
 
 ## ECN and AccECN Transparency
-Middleboxes MUST NOT clear (bleach) ECN bits, in accordance with {{RFC3168}}. They MUST preserve `ECT(0)`, `ECT(1)`, and `CE` markings on all IP packets.
-Furthermore, middleboxes MUST NOT strip, modify, or drop packets containing TCP options 172 or 174.
+Flow-Preserving Packet Processors MUST NOT clear (bleach) ECN bits, in accordance with {{RFC3168}}. They MUST preserve `ECT(0)`, `ECT(1)`, and `CE` markings on all IP packets, except in the event of queue forming, where appropriate codepoints should be marked. Similarly, Flow-Preserving Packet Processors MUST NOT strip, modify, or drop packets containing TCP options 172 or 174.
+
+Non-compliant behaviour can lead to timeouts and retransmits in the TCP handshake, and consequently to a degraded user experience.
 
 ## Handshake Forwarding
-Middleboxes MUST transparently forward `SYN` and `SYN-ACK` packets that negotiate ECN or AccECN. Middleboxes MUST NOT drop TCP handshake packets solely due to the presence of ECN negotiation flags or AccECN TCP options.
+Flow-Preserving Packet Processors MUST transparently forward `SYN` and `SYN-ACK` packets that negotiate ECN or AccECN. Flow-Preserving Packet Processors MUST NOT drop TCP handshake packets solely due to the presence of ECN negotiation flags or AccECN TCP options.
 
 ## Mitigation Against Non-Compliant Prioritization
 
 Network infrastructure nodes MUST NOT act on `ECT(1)` flags to prioritize traffic in alternative, non-compliant ways unless a valid end-to-end feedback loop is actively maintained—where the network nodes execute compliant congestion marking and the transport endpoints record and reflect those markings in line with the transport-specific requirements specified in Section 4.2 of {{RFC9331}}.
 
-Modern network deployments MUST NOT be marketed or operated as supporting L4S if they prioritize traffic via alternative heuristics (such as bandwidth allocation multipliers) without enforcing or verifying true, end-to-end transport-layer feedback loop compliance as detailed in (#transport-feedback-prerequisites).
+Network deployments MUST NOT be marketed or operated as supporting L4S if they prioritize traffic via alternative heuristics (such as bandwidth allocation multipliers). The risk of such alternative mechanisms is incentivising marking `ECT(1)` codepoints in flows to be allocated into prioritised queues, without implementing full L4S congestion control as described in {#defense-against-misbehaving-traffic}. The convergence point of such behaviour would be a prevalence of `ECT(1)` marked traffic that does not respond to `CE` markings and congestion in the incorrectly prioritised queues.
 
 # Security Considerations
 
-L4S introduces potential abuse vectors where applications mark queue-building traffic as low-latency. As described in Section 3.5, the baseband/modem subsystem MUST deploy queue protection mechanisms to defend the low-latency queue from starvation and latency degradation.
+L4S introduces potential abuse vectors where applications mark queue-building traffic as low-latency. As described in {#defense-against-misbehaving-traffic}, the baseband/modem subsystem MUST deploy queue protection mechanisms to defend the low-latency queue from starvation and latency degradation.
 
 # IANA Considerations
 
