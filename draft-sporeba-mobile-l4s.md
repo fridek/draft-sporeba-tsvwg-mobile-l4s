@@ -47,6 +47,7 @@ normative:
 
 informative:
   I-D.livingood-low-latency-deployment:
+  I-D.ietf-tsvwg-udp-ecn:
 
 ...
 --- abstract
@@ -71,7 +72,7 @@ To enable UDP-based transport stacks (such as QUIC) to utilize L4S, the OS MUST 
 1. Set the ECN codepoint {{RFC9331}} on outgoing packets.
 1. Read the ECN codepoints of incoming packets.
 
-These capabilities MUST be exposed via standard socket APIs (e.g., `IP_TOS` and `IPV6_TCLASS` for setting, and `IP_RECVTOS` and `IPV6_RECVTCLASS` via ancillary data for reading) and MUST NOT be restricted by default security policies for standard application sockets. The APIs MUST allow reading the ECN codepoints on a per-packet basis. and MUST allow setting the ECN codepoints either on a per-socket or per-packet basis. The detailed explanation of configuring UDP sockets for ECN for common platforms is covered in {{I-D.draft-ietf-tsvwg-udp-ecn}}.
+These capabilities MUST be exposed via standard socket APIs (e.g., `IP_TOS` and `IPV6_TCLASS` for setting, and `IP_RECVTOS` and `IPV6_RECVTCLASS` via ancillary data for reading) and MUST NOT be restricted by default security policies for standard application sockets. The APIs MUST allow reading the ECN codepoints on a per-packet basis. and MUST allow setting the ECN codepoints either on a per-socket or per-packet basis. The detailed explanation of configuring UDP sockets for ECN for common platforms is covered in {{I-D.ietf-tsvwg-udp-ecn}}.
 
 UDP-based transport stacks SHOULD mark L4S-capable traffic as ECT(1) and MUST NOT mark queue-building traffic (e.g., traffic using legacy congestion controls) as ECT(1). Link layers MUST respond to misbehaving stack as discussed in {#defense-against-misbehaving-traffic}.
 
