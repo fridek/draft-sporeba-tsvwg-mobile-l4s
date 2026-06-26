@@ -97,28 +97,29 @@ When maintaining such lists, entries SHOULD be retired after a reasonable TTL (e
 
 # Link-layer Subsystems Requirements
 
-The link-layer (modem and WiFi) subsystems manage the link-layer transmission over the radio interface and perform significant queueing on the uplink and downlink path.
+Link-layer subsystems, such as the cellular modem and Wi-Fi schedule and manage the link-layer transmission over the physical medium interface. These systems typically perform significant queueing on the transmit path, and sometimes on the receive path as well.
 
 ## Link-layer inbound packet reordering
 
-Some link-layers provide strong ordering guarantees for inbound packets by assigning a link-layer sequence number to each packet and buffering incoming packets so they can be presented to the host operating system in order. In particular, out-of-order packet delivery is common in cellular networks due to multi-path transmission. This causes out-of-order packets to be delayed until all previous packets have been received, and causes latency spikes when packets are lost due to transmission errors.
+Some link layers provide strong ordering guarantees for inbound packets by assigning a link-layer sequence number to each packet and buffering incoming packets so they can be presented to the host operating system in order. In particular, cellular networks often perform out-of-order packet delivery at the physical layer, but require the cellular modem to deliver received packets to the host operating system in order. When packets are received out of order on the air interface, the modem waits up to a network-configurable timeout to receive all previous packets. This causes out-of-order packets to be delayed until all previous packets have been received, and causes latency spikes when packets are lost due to transmission errors.
 
-Delaying received packets increases latency, which is contrary to the low-latency goals of L4S. Also, by artificially introducing delays that were not imposed by the network, it will reduce the accuracy of protocol rate estimation. Many contemporary protocol stacks are generally well-equipped to handle out-of-order packets.
+Delaying received packets increases latency, which is contrary to the low-latency goals of L4S. Also, by artificially introducing delays that were not imposed by the network, it reduces the accuracy of protocol rate estimation. The additional delays do not benefit contemporary protocol stacks, which are generally well-equipped to handle out-of-order packets.
 
 L4S-aware protocol stacks MUST be prepared to receive out-of-order packets.
 
-Link-layers MUST NOT buffer inbound packets in a way that imposes measurable latency to the protocol stack.
+Link-layers MUST NOT buffer inbound L4S packets in a way that imposes measurable latency to the protocol stack.
 
-## Multi-Queue Scheduling and Bounded Latency
-Any link layer that supports L4S MUST support a low-latency queue designated for Non-Queue-Building {{RFC9956}} traffic. This queue MUST be bounded as described in Section 3.4 and Section 3.5.
-Some modem systems are known to already support high-priority and low-priority queues. These queues are typically not latency-bounded, so in the presence of such queues, low-latency queue MUST be distinct from them. An example configuration might be:
+## Multi-Queue Scheduling and Bounded Latency Queueing
+
+Any link layer that supports L4S MUST provide a low-latency queue designated for L4S traffic and Non-Queue-Building traffic ({{RFC9956}} section 3.3). This queue MUST be bounded as described in {#uplink-aqm} and {#defense-against-misbehaving-traffic}.
+Some link-layer systems already support high-priority and low-priority queues. These queues are typically not latency-bounded, and therefore cannot guarantee the low-latency benefits of L4S. If the link layer provides such queues, low-latency queue MUST be distinct from them. An example configuration might be:
 
 
-*  **L4S/Low-Latency Queue:** For `ECT(1)` and DSCP-45 marked traffic.
-*  **High-Priority Queue:** For signaling, IMS voice (VoLTE/VoNR), and other critical real-time traffic.
+*  **Low-Latency Queue:** For `ECT(1)` and NQB traffic.
+*  **High-Priority Queue:** For high priority but potentially queue-building traffic.
 *  **Low-Priority Queue:** For queue-building traffic (e.g., CUBIC/Reno) and bulk data.
 
-It MIGHT be desirable to prioritise high-priority traffic (e.g. signaling) ahead of Low-Latency traffic to prevent starvation of other queues in the abundance of L4S packets. Such prioritisation SHOULD use a scheduling algorithm (e.g., Weighted Fair Queueing) and aim to minimize the queue buildup in the Low-Latency queue.
+Link layers SHOULD ensure that the L4S queue does not starve the other queues if offered L4S traffic is higher than available bandwidth. Such prioritisation SHOULD use a scheduling algorithm (e.g., Weighted Fair Queueing) and aim to minimize the queue buildup in the Low-Latency queue.
 
 ## Packet Classification
 
@@ -130,7 +131,7 @@ The link-layer MUST map uplink traffic to the low-latency queue based on ECN mar
 Link-layer networks MUST NOT attempt to dynamically classify packets for the low-latency queue using heuristic traffic inference or Deep Packet Inspection (DPI). Classification MUST rely solely on the explicit packet markings set by the application endpoints. This ensures compatibility with fully encrypted payloads and aligns with the end-to-end principle and permissionless innovation, as discussed in the ISP deployment observations in {{I-D.livingood-low-latency-deployment}} (which also contains details on Wi-Fi link-layer queuing considerations).
 
 
-## Uplink Active Queue Management (AQM)
+## Uplink Active Queue Management (AQM) {#uplink-aqm}
 The link-layer uplink buffer is often a bottleneck due to cellular grant scheduling. When the uplink queue builds up, the modem MUST perform ECN marking:
 
 *  If the sojourn time of a packet in the L4S queue exceeds a shallow threshold (e.g., 1 ms to 5 ms), the modem MUST mark the packet as `CE` in the IP header before transmitting it, rather than dropping it.
