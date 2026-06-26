@@ -51,22 +51,14 @@ informative:
 ...
 --- abstract
 
-This document describes practical deployment considerations for Low Latency, Low Loss, and Scalable Throughput (L4S) in mobile devices. It defines the responsibilities of the host operating system, the link-layer (modem and WiFi) subsystems and Flow-Preserving Packet Processors to ensure successful end-to-end low-latency communication.
+This document documents best practices for deployment of Low Latency, Low Loss, and Scalable Throughput (L4S) in mobile devices. It defines the responsibilities of the host operating system, the link-layer (modem and WiFi) subsystems to ensure successful end-to-end low-latency communication.
 
 --- middle
 
 # Introduction
 
-L4S (Low Latency, Low Loss, Scalable Throughput) {{RFC9330}} offers a framework to significantly reduce queuing delay while maintaining high throughput. Mobile devices often have to react to quickly changing connectivity conditions and may be subject to variable throughput and connection quality. This can cause large variations in user-perceived latency and greater bufferbloat than in other devices. This document outlines best current practices for implementing L4S for mobile devices.
+L4S (Low Latency, Low Loss, Scalable Throughput) {{RFC9330}} offers a framework to significantly reduce queuing delay while maintaining high throughput. Mobile devices often have to react to quickly changing connectivity conditions and may be subject to variable throughput and connection quality. This can cause large variations in user-perceived latency and greater bufferbloat than in other devices. Deploying L4S in a mobile ecosystem requires co-operation across multiple layers: the network stack, the host operating system (OS), and link-layer drivers and firmware (e.g., Wi-Fi and cellular modem), and the network. This document outlines best current practices for each of these subsystems to achieve reliable, low-latency performance in the field.
 
-Deploying L4S in a mobile ecosystem requires co-operation across multiple layers: the application, the host operating system (OS), and link-layer drivers and firmware (e.g., Wi-Fi and cellular modem), and the network. This document outlines practical deployment considerations and requirements for each of these subsystems to achieve reliable, low-latency performance in the field.
-
-
-## Conventions and Definitions
-
-{::boilerplate bcp14-tagged}
-
-Flow-Preserving Packet Processors are any core network elements (such as the UPF and PGW) and routers, typically a part of mobile carrier or ISP infrastructure. This document does not aim to offer operational advice to backbone, data center or server equipment. These concerns are covered in other documents which detail the communications in non-mobile networks.
 
 # Host Operating System Requirements
 
@@ -76,24 +68,28 @@ The host operating system controls application-level network access and hosts th
 
 To enable UDP-based transport stacks (such as QUIC) to utilize L4S, the OS MUST provide APIs that allow applications to:
 
-1. Set the ECN codepoint to `ECT(1)` {{RFC9331}} on outgoing packets.
-1. Read the ECN codepoints (specifically `CE` markings) of incoming packets.
+1. Set the ECN codepoint {{RFC9331}} on outgoing packets.
+1. Read the ECN codepoints of incoming packets.
 
-These capabilities MUST be exposed via standard socket options (e.g., `IP_TOS` and `IPV6_TCLASS` for setting, and `IP_RECVTOS` and `IPV6_RECVTCLASS` via ancillary data for reading) and MUST NOT be restricted by default security policies for standard application sockets.
+These capabilities MUST be exposed via standard socket APIs (e.g., `IP_TOS` and `IPV6_TCLASS` for setting, and `IP_RECVTOS` and `IPV6_RECVTCLASS` via ancillary data for reading) and MUST NOT be restricted by default security policies for standard application sockets. The APIs MUST allow reading the ECN codepoints on a per-packet basis. and MUST allow setting the ECN codepoints either on a per-socket or per-packet basis. The detailed explanation of configuring UDP sockets for ECN for common platforms is covered in {{I-D.draft-ietf-tsvwg-udp-ecn}}.
+
+UDP-based transport stacks SHOULD mark L4S-capable traffic as ECT(1) and MUST NOT mark queue-building traffic (e.g., traffic using legacy congestion controls) as ECT(1). Link layers MUST respond to misbehaving stack as discussed in {#defense-against-misbehaving-traffic}.
 
 ## TCP support detection and bootstrapping
 
-To deploy receive-side L4S for TCP, host operating systems and link-layers must negotiate ECN support and verify path integrity.
-
-A client that wants to be resilient to networks that don't support L4S MUST follow the negotiation steps described in {{RFC3168}}, {{RFC8311}}, {{RFC9331}}, and {{RFC9768}}
-Negotiation of ECN support for TCP follows the Classic ECN setup defined in Section 6.1.1 {{RFC3168}} and recapped in Section 1.4 of {{RFC9768}}.
-Negotiation of AccECN support is defined in Section 3.1 of {{RFC9768}}
-
-These negotiations MUST include the retry mechanisms described in Section 3.1.4 and Section 3.2.3.2.2 of {{RFC9768}}.
+To allow L4S-capable senders (e.g., Internet servers) to take advantage of L4S, host operating systems and link-layers must negotiate ECN support and verify path integrity as described in Section 1.4 and Section 3 of {{RFC9768}}.
 
 ### Per-network detection and latency mitigation
 
-Latency can be critical to mobile applications, and fallback paths dependent on retransmissions and timeouts can lead to a degraded user experience in flows where L4S fails to be negotiated in any of the steps listed in Section 2.2. A host system that wants to be resilient to this MAY attempt a connectivity check to a known, L4S-supporting service. In case of check failure, the result can be used to turn off L4S negotiation attempts for a given network, represented by PLMN/APN (in carrier networks) or BSSID (in Wi-Fi networks). Additionally, the host system MAY maintain additional L4S support cache on a per-host or per-IP-address, or other basis. When maintaining such lists, entries should be retired after a preferred TTL (e.g. 7 days) and preferably indexed per network to disambiguate between host and path L4S support.
+If misconfigured networks or servers drop ECN negotiation packets, and the client does not retry without ECN negotiation, TCP connections will fail. Therefore, clients MUST implement retry strategies that disable ECN negotiation, as described in Section 3.1.4 and Section 3.2.3.2.2 of {{RFC9768}}. Note that a server replying with Not-ECT is does not require any additional retries and is not considered a failure.
+
+Latency is critical to mobile applications, and retry strategies dependent on retransmissions and timeouts can lead to a degraded user experience. To ensure that L4S can be safely enabled without degrading the user experience in the presence of networks or servers that drop ECN negotiations or Accurate ECN TCP options, the client SHOULD balance implementing the retry strategies in section 3 of {{RFC9768}} with mechanisms to reduce the latency impact of retransmissions. A possible strategy is to only attempt ECN negotiation on the first SYN to a new server. Additionally, the host MAY cache ECN negotiation timeouts on a per-host or per-IP-address, or other basis.
+
+If a host is in a network that blocks all ECN negotiation regardless of destination, all TCP connections will suffer latency impact. This will degrade the user experience even if failures are cached, because any connection to a server that is not in the cache will suffer an additional round trip delay.
+
+A host system that wants to be resilient to this MAY attempt a connectivity check to a known, L4S-supporting service. In case of check failure, the result can be used to turn off L4S negotiation attempts for a given network, represented by PLMN/APN (in carrier networks) or SSID/BSSID (in Wi-Fi networks).
+
+When maintaining such lists, entries SHOULD be retired after a reasonable TTL (e.g. 7 days), and SHOULD prefer information from more frequently used destinations.
 
 # Link-layer Subsystems Requirements
 
