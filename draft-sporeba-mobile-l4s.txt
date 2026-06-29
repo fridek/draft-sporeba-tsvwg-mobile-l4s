@@ -5,9 +5,9 @@
 TSVWG Working Group                                            S. Poreba
 Internet-Draft                                                L. Colitti
 Intended status: Best Current Practice                        Google LLC
-Expires: 28 December 2026                                     S. Irlanki
+Expires: 31 December 2026                                     S. Irlanki
                                                              Samsung R&D
-                                                            26 June 2026
+                                                            29 June 2026
 
 
         Best Practices for L4S implementation for Mobile Devices
@@ -48,7 +48,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 28 December 2026.
+   This Internet-Draft will expire on 31 December 2026.
 
 Copyright Notice
 
@@ -67,13 +67,14 @@ Copyright Notice
 Table of Contents
 
    1.  Introduction
+     1.1.  Conventions and Definitions
    2.  Host Operating System Requirements
      2.1.  Socket APIs for UDP
      2.2.  TCP support detection and bootstrapping
        2.2.1.  Per-network detection and latency mitigation
    3.  Link-layer Subsystems Requirements
      3.1.  Link-layer inbound packet reordering
-     3.2.  Multi-Queue Scheduling and Bounded Latency
+     3.2.  Multi-Queue Scheduling and Bounded Latency Queueing
      3.3.  Packet Classification
      3.4.  Uplink Active Queue Management (AQM)
      3.5.  Defense Against Misbehaving Traffic (Queue Protection)
@@ -103,6 +104,14 @@ Table of Contents
    modem), and the network.  This document outlines best current
    practices for each of these subsystems to achieve reliable, low-
    latency performance in the field.
+
+1.1.  Conventions and Definitions
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in
+   BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all
+   capitals, as shown here.
 
 2.  Host Operating System Requirements
 
@@ -181,56 +190,64 @@ Table of Contents
 
 3.  Link-layer Subsystems Requirements
 
-   The link-layer (modem and WiFi) subsystems manage the link-layer
-   transmission over the radio interface and perform significant
-   queueing on the uplink and downlink path.
+   Link-layer subsystems, such as the cellular modem and Wi-Fi schedule
+   and manage the link-layer transmission over the physical medium
+   interface.  These systems typically perform significant queueing on
+   the transmit path, and sometimes on the receive path as well.
 
 3.1.  Link-layer inbound packet reordering
 
-   Some link-layers provide strong ordering guarantees for inbound
+   Some link layers provide strong ordering guarantees for inbound
    packets by assigning a link-layer sequence number to each packet and
    buffering incoming packets so they can be presented to the host
-   operating system in order.  In particular, out-of-order packet
-   delivery is common in cellular networks due to multi-path
-   transmission.  This causes out-of-order packets to be delayed until
-   all previous packets have been received, and causes latency spikes
-   when packets are lost due to transmission errors.
+   operating system in order.  In particular, cellular networks often
+   perform out-of-order packet delivery at the physical layer, but
+   require the cellular modem to deliver received packets to the host
+   operating system in order.  When packets are received out of order on
+   the air interface, the modem waits up to a network-configurable
+   timeout to receive all previous packets.  This causes out-of-order
+   packets to be delayed until all previous packets have been received,
+   and causes latency spikes when packets are lost due to transmission
+   errors.
 
    Delaying received packets increases latency, which is contrary to the
    low-latency goals of L4S.  Also, by artificially introducing delays
-   that were not imposed by the network, it will reduce the accuracy of
-   protocol rate estimation.  Many contemporary protocol stacks are
-   generally well-equipped to handle out-of-order packets.
+   that were not imposed by the network, it reduces the accuracy of
+   protocol rate estimation.  The additional delays do not benefit
+   contemporary protocol stacks, which are generally well-equipped to
+   handle out-of-order packets.
 
    L4S-aware protocol stacks MUST be prepared to receive out-of-order
    packets.
 
-   Link-layers MUST NOT buffer inbound packets in a way that imposes
+   Link-layers MUST NOT buffer inbound L4S packets in a way that imposes
    measurable latency to the protocol stack.
 
-3.2.  Multi-Queue Scheduling and Bounded Latency
+3.2.  Multi-Queue Scheduling and Bounded Latency Queueing
 
-   Any link layer that supports L4S MUST support a low-latency queue
-   designated for Non-Queue-Building [RFC9956] traffic.  This queue MUST
-   be bounded as described in Section 3.4 and Section 3.5.  Some modem
-   systems are known to already support high-priority and low-priority
-   queues.  These queues are typically not latency-bounded, so in the
-   presence of such queues, low-latency queue MUST be distinct from
-   them.  An example configuration might be:
+   Any link layer that supports L4S MUST provide a low-latency queue
+   designated for L4S traffic and Non-Queue-Building traffic ([RFC9956]
+   section 3.3).  This queue MUST be bounded as described in {#uplink-
+   aqm} and {#defense-against-misbehaving-traffic}. Some link-layer
+   systems already support high-priority and low-priority queues.  These
+   queues are typically not latency-bounded, and therefore cannot
+   guarantee the low-latency benefits of L4S.  If the link layer
+   provides such queues, low-latency queue MUST be distinct from them.
+   An example configuration might be:
 
-   *  *L4S/Low-Latency Queue:* For ECT(1) and DSCP-45 marked traffic.
+   *  *Low-Latency Queue:* For ECT(1) and NQB traffic.
 
-   *  *High-Priority Queue:* For signaling, IMS voice (VoLTE/VoNR), and
-      other critical real-time traffic.
+   *  *High-Priority Queue:* For high priority but potentially queue-
+      building traffic.
 
    *  *Low-Priority Queue:* For queue-building traffic (e.g., CUBIC/
       Reno) and bulk data.
 
-   It MIGHT be desirable to prioritise high-priority traffic (e.g.
-   signaling) ahead of Low-Latency traffic to prevent starvation of
-   other queues in the abundance of L4S packets.  Such prioritisation
-   SHOULD use a scheduling algorithm (e.g., Weighted Fair Queueing) and
-   aim to minimize the queue buildup in the Low-Latency queue.
+   Link layers SHOULD ensure that the L4S queue does not starve the
+   other queues if offered L4S traffic is higher than available
+   bandwidth.  Such prioritisation SHOULD use a scheduling algorithm
+   (e.g., Weighted Fair Queueing) and aim to minimize the queue buildup
+   in the Low-Latency queue.
 
 3.3.  Packet Classification
 
@@ -359,10 +376,19 @@ Table of Contents
 
 7.1.  Normative References
 
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119,
+              DOI 10.17487/RFC2119, March 1997,
+              <https://www.rfc-editor.org/rfc/rfc2119>.
+
    [RFC3168]  Ramakrishnan, K., Floyd, S., and D. Black, "The Addition
               of Explicit Congestion Notification (ECN) to IP",
               RFC 3168, DOI 10.17487/RFC3168, September 2001,
               <https://www.rfc-editor.org/rfc/rfc3168>.
+
+   [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
+              2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
+              May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
 
    [RFC8311]  Black, D., "Relaxing Restrictions on Explicit Congestion
               Notification (ECN) Experimentation", RFC 8311,
