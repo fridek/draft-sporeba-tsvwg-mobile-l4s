@@ -27,7 +27,7 @@ author:
  -
     fullname: Sebastian Poreba
     organization: Google LLC
-    email: sebastian@poreba.me
+    email: sporeba@google.com
  -
     fullname: Lorenzo Colitti
     organization: Google LLC
@@ -115,7 +115,7 @@ Any link layer that supports L4S MUST provide a low-latency queue designated for
 Some link-layer systems already support high-priority and low-priority queues. These queues are typically not latency-bounded, and therefore cannot guarantee the low-latency benefits of L4S. If the link layer provides such queues, low-latency queue MUST be distinct from them. An example configuration might be:
 
 
-*  **Low-Latency Queue:** For `ECT(1)` and NQB traffic.
+*  **Low-Latency Queue:** For L4S and other Non-Queue-Building traffic.
 *  **High-Priority Queue:** For high priority but potentially queue-building traffic.
 *  **Low-Priority Queue:** For queue-building traffic (e.g., CUBIC/Reno) and bulk data.
 
@@ -126,48 +126,53 @@ Link layers SHOULD ensure that the L4S queue does not starve the other queues if
 The link-layer MUST map uplink traffic to the low-latency queue based on ECN markings:
 
 *  Packets carrying the `ECT(1)` or `CE` bits in the IP header MUST be steered to the low-latency queue.
-*  The modem SHOULD also support mapping to the low-latency queue based on the Non-Queue-Building (NQB) DSCP value (45) {{RFC9956}} as an alternative or supplementary classifier. Because DSCP markings are frequently bleached at carrier interconnect boundaries, ECN mapping remains the most reliable end-to-end classifier for mobile networks.
+*  The link-layer SHOULD also support mapping to the low-latency queue based on the Non-Queue-Building (NQB) DSCP value (45) {{RFC9956}} as an alternative or supplementary classifier. Because DSCP markings are frequently bleached at carrier interconnect boundaries, ECN mapping remains the most reliable end-to-end classifier for mobile networks.
 
 Link-layer networks MUST NOT attempt to dynamically classify packets for the low-latency queue using heuristic traffic inference or Deep Packet Inspection (DPI). Classification MUST rely solely on the explicit packet markings set by the application endpoints. This ensures compatibility with fully encrypted payloads and aligns with the end-to-end principle and permissionless innovation, as discussed in the ISP deployment observations in {{I-D.livingood-low-latency-deployment}} (which also contains details on Wi-Fi link-layer queuing considerations).
 
 
 ## Uplink Active Queue Management (AQM) {#uplink-aqm}
-The link-layer uplink buffer is often a bottleneck due to cellular grant scheduling. When the uplink queue builds up, the modem MUST perform ECN marking:
 
-*  If the sojourn time of a packet in the L4S queue exceeds a shallow threshold (e.g., 1 ms to 5 ms), the modem MUST mark the packet as `CE` in the IP header before transmitting it, rather than dropping it.
+The link-layer uplink buffer is often a bottleneck due to cellular grant scheduling. When the uplink queue builds up, the link-layer MUST perform ECN marking:
+
+*  If the sojourn time of a packet in the L4S queue exceeds a shallow threshold (e.g., 1 ms to 5 ms), the link-layer MUST mark the packet as `CE` in the IP header before transmitting it, rather than dropping it.
 *  Packets MUST only be dropped if the queue reaches the maximum designated size.
 
 ## Defense Against Misbehaving Traffic (Queue Protection) {#defense-against-misbehaving-traffic}
+
 Applications may mark their traffic as NQB or `ECT(1)` without implementing L4S congestion control, causing queue build-up in the low-latency queue.
 
-*  The modem MUST enforce a strict size limit on the Low-Latency Queue. If the queue is full, incoming packets MUST be dropped.
-*  The modem SHOULD monitor queue build-up and latency contributions of individual flows within the L4S queue.
-*  If a flow is detected to be queue-building (e.g., contributing to sustained queue latency above the marking threshold without responding to CE marks), the modem SHOULD demote the flow and redirect its packets to a different queue.
+*  The link-layer MUST enforce a strict size limit on the Low-Latency Queue. If the queue is full, incoming packets MUST be dropped.
+*  The link-layer SHOULD monitor queue build-up and latency contributions of individual flows within the L4S queue.
+*  If a flow is detected to be queue-building (e.g. contributing to sustained queue latency above the marking threshold without responding to CE marks), the link-layer SHOULD demote the flow and redirect its packets to a different queue.
 
 ## Transparency and Bleach Prevention
-The modem MUST NOT modify the ECN bits, DSCP flags, or AccECN TCP options (172 and 174) on low-latency-queue transit traffic, except for performing standard CE marking in the event of queue buildup.
 
-# Flow-Preserving Packet Processors Requirements
+The link-layer MUST NOT modify the ECN bits, DSCP flags, or AccECN TCP options (172 and 174) on low-latency-queue transit traffic, except for performing standard CE marking in the event of queue buildup.
 
-Flow-Preserving Packet Processors MUST NOT perform network-based classification or rewrite ECN/DSCP markings based on traffic heuristics or DPI. In accordance with {{I-D.livingood-low-latency-deployment}}, active classification decisions MUST be left to the application endpoints, and on-path devices MUST restrict their role to marking the ECN bits in the event of a queue forming.
+# On-Path Node Requirements
+
+On-Path Nodes MUST NOT perform network-based classification or rewrite ECN/DSCP markings based on traffic heuristics or DPI. In accordance with {{I-D.livingood-low-latency-deployment}}, active classification decisions MUST be left to the application endpoints, and on-path devices MUST restrict their role to marking the ECN bits in the event of a queue forming.
 
 ## ECN and AccECN Transparency
-Flow-Preserving Packet Processors MUST NOT clear (bleach) ECN bits, in accordance with {{RFC3168}}. They MUST preserve `ECT(0)`, `ECT(1)`, and `CE` markings on all IP packets, except in the event of queue forming, where appropriate codepoints should be marked. Similarly, Flow-Preserving Packet Processors MUST NOT strip, modify, or drop packets containing TCP options 172 or 174.
+
+On-Path Nodes MUST NOT clear (bleach) ECN bits, in accordance with {{RFC3168}}. They MUST preserve `ECT(0)`, `ECT(1)`, and `CE` markings on all IP packets, except in the event of queue forming, where appropriate codepoints should be marked. Similarly, On-Path Nodes MUST NOT strip, modify, or drop packets containing TCP options 172 or 174.
 
 Non-compliant behaviour can lead to timeouts and retransmits in the TCP handshake, and consequently to a degraded user experience.
 
 ## Handshake Forwarding
-Flow-Preserving Packet Processors MUST transparently forward `SYN` and `SYN-ACK` packets that negotiate ECN or AccECN. Flow-Preserving Packet Processors MUST NOT drop TCP handshake packets solely due to the presence of ECN negotiation flags or AccECN TCP options.
+
+On-Path Nodes MUST transparently forward `SYN` and `SYN-ACK` packets that negotiate ECN or AccECN. On-Path Nodes MUST NOT drop TCP handshake packets solely due to the presence of ECN negotiation flags or AccECN TCP options.
 
 ## Mitigation Against Non-Compliant Prioritization
 
-Network infrastructure nodes MUST NOT act on `ECT(1)` flags to prioritize traffic in alternative, non-compliant ways unless a valid end-to-end feedback loop is actively maintained—where the network nodes execute compliant congestion marking and the transport endpoints record and reflect those markings in line with the transport-specific requirements specified in Section 4.2 of {{RFC9331}}.
+On-Path Nodes MUST NOT act on `ECT(1)` flags to prioritize traffic in alternative, non-compliant ways unless a valid end-to-end feedback loop is actively maintained—where the network nodes execute compliant congestion marking and the transport endpoints record and reflect those markings in line with the transport-specific requirements specified in Section 4.2 of {{RFC9331}}.
 
 Network deployments MUST NOT be marketed or operated as supporting L4S if they prioritize traffic via alternative heuristics (such as bandwidth allocation multipliers). The risk of such alternative mechanisms is incentivising marking `ECT(1)` codepoints in flows to be allocated into prioritised queues, without implementing full L4S congestion control as described in {#defense-against-misbehaving-traffic}. The convergence point of such behaviour would be a prevalence of `ECT(1)` marked traffic that does not respond to `CE` markings and congestion in the incorrectly prioritised queues.
 
 # Security Considerations
 
-L4S introduces potential abuse vectors where applications mark queue-building traffic as low-latency. As described in {#defense-against-misbehaving-traffic}, the baseband/modem subsystem MUST deploy queue protection mechanisms to defend the low-latency queue from starvation and latency degradation.
+L4S introduces potential abuse vectors where applications mark queue-building traffic as low-latency. As described in {#defense-against-misbehaving-traffic}, the link-layer subsystem MUST deploy queue protection mechanisms to defend the low-latency queue from starvation and latency degradation.
 
 # IANA Considerations
 
