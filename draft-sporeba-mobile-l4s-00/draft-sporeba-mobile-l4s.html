@@ -7,8 +7,9 @@
 <title>Best Practices for L4S implementation for Mobile Devices</title>
 <meta content="Sebastian Poreba" name="author">
 <meta content="Lorenzo Colitti" name="author">
+<meta content="Sandeep Irlanki" name="author">
 <meta content="
-       This document describes practical deployment considerations for Low Latency, Low Loss, and Scalable Throughput (L4S) in mobile devices. It defines the responsibilities of the host operating system, the link-layer (modem and WiFi) subsystems to ensure successful end-to-end low-latency communication. 
+       This document documents best practices for deployment of Low Latency, Low Loss, and Scalable Throughput (L4S) in mobile devices. It defines the responsibilities of the host operating system, the link-layer (modem and WiFi) subsystems to ensure successful end-to-end low-latency communication. 
     " name="description">
 <meta content="xml2rfc 3.34.0" name="generator">
 <meta content="L4S" name="keyword">
@@ -1053,8 +1054,8 @@ svg {
 <td class="right">June 2026</td>
 </tr></thead>
 <tfoot><tr>
-<td class="left">Poreba &amp; Colitti</td>
-<td class="center">Expires 21 December 2026</td>
+<td class="left">Poreba, et al.</td>
+<td class="center">Expires 1 January 2027</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1067,12 +1068,12 @@ svg {
 <dd class="internet-draft">draft-sporeba-mobile-l4s-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-06-19" class="published">19 June 2026</time>
+<time datetime="2026-06-30" class="published">30 June 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Best Current Practice</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2026-12-21">21 December 2026</time></dd>
+<dd class="expires"><time datetime="2027-01-01">1 January 2027</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1083,13 +1084,17 @@ svg {
       <div class="author-name">L. Colitti</div>
 <div class="org">Google LLC</div>
 </div>
+<div class="author">
+      <div class="author-name">S. Irlanki</div>
+<div class="org">Samsung R&amp;D</div>
+</div>
 </dd>
 </dl>
 </div>
 <h1 id="title">Best Practices for L4S implementation for Mobile Devices</h1>
 <section id="section-abstract">
       <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
-<p id="section-abstract-1">This document describes practical deployment considerations for Low Latency, Low Loss, and Scalable Throughput (L4S) in mobile devices. It defines the responsibilities of the host operating system, the link-layer (modem and WiFi) subsystems to ensure successful end-to-end low-latency communication.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+<p id="section-abstract-1">This document documents best practices for deployment of Low Latency, Low Loss, and Scalable Throughput (L4S) in mobile devices. It defines the responsibilities of the host operating system, the link-layer (modem and WiFi) subsystems to ensure successful end-to-end low-latency communication.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
 </section>
 <section class="note rfcEditorRemove" id="section-note.1">
       <h2 id="name-about-this-document">
@@ -1121,7 +1126,7 @@ svg {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 21 December 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 1 January 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1181,7 +1186,7 @@ svg {
                 <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="auto internal xref">3.1</a>.  <a href="#name-link-layer-inbound-packet-r" class="internal xref">Link-layer inbound packet reordering</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2">
-                <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="auto internal xref">3.2</a>.  <a href="#name-multi-queue-scheduling-and-" class="internal xref">Multi-Queue Scheduling and Bounded Latency</a></p>
+                <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="auto internal xref">3.2</a>.  <a href="#name-multi-queue-scheduling-and-" class="internal xref">Multi-Queue Scheduling and Bounded Latency Queueing</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3">
                 <p id="section-toc.1-1.3.2.3.1"><a href="#section-3.3" class="auto internal xref">3.3</a>.  <a href="#name-packet-classification" class="internal xref">Packet Classification</a></p>
@@ -1198,13 +1203,16 @@ svg {
             </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4">
-            <p id="section-toc.1-1.4.1"><a href="#section-4" class="auto internal xref">4</a>.  <a href="#name-middlebox-requirements" class="internal xref">Middlebox Requirements</a></p>
+            <p id="section-toc.1-1.4.1"><a href="#section-4" class="auto internal xref">4</a>.  <a href="#name-on-path-node-requirements" class="internal xref">On-Path Node Requirements</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1">
                 <p id="section-toc.1-1.4.2.1.1"><a href="#section-4.1" class="auto internal xref">4.1</a>.  <a href="#name-ecn-and-accecn-transparency" class="internal xref">ECN and AccECN Transparency</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.2">
                 <p id="section-toc.1-1.4.2.2.1"><a href="#section-4.2" class="auto internal xref">4.2</a>.  <a href="#name-handshake-forwarding" class="internal xref">Handshake Forwarding</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3">
+                <p id="section-toc.1-1.4.2.3.1"><a href="#section-4.3" class="auto internal xref">4.3</a>.  <a href="#name-mitigation-against-non-comp" class="internal xref">Mitigation Against Non-Compliant Prioritization</a></p>
 </li>
             </ul>
 </li>
@@ -1237,8 +1245,7 @@ svg {
       <h2 id="name-introduction">
 <a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
       </h2>
-<p id="section-1-1">L4S (Low Latency, Low Loss, Scalable Throughput) <span>[<a href="#RFC9330" class="cite xref">RFC9330</a>]</span> offers a framework to significantly reduce queuing delay while maintaining high throughput. Mobile devices often have to react to quickly changing connectivity conditions and may be subject to variable throughput and connection quality. This can cause large variations in user-perceived latency and greater bufferbloat than in other devices. This document outlines best current practices for implementing L4S in mobile devices.<a href="#section-1-1" class="pilcrow">¶</a></p>
-<p id="section-1-2">Deploying L4S in a mobile ecosystem requires co-operation across multiple layers: the application, the host operating system (OS), and link-layer drivers and firmware (e.g., Wi-Fi and cellular modem), and the network. This document outlines practical deployment considerations and requirements for each of these subsystems to achieve reliable, low-latency performance in the field.<a href="#section-1-2" class="pilcrow">¶</a></p>
+<p id="section-1-1">L4S (Low Latency, Low Loss, Scalable Throughput) <span>[<a href="#RFC9330" class="cite xref">RFC9330</a>]</span> offers a framework to significantly reduce queuing delay while maintaining high throughput. Mobile devices often have to react to quickly changing connectivity conditions and may be subject to variable throughput and connection quality. This can cause large variations in user-perceived latency and greater bufferbloat than in other devices. Deploying L4S in a mobile ecosystem requires co-operation across multiple layers: the network stack, the host operating system (OS), and link-layer drivers and firmware (e.g., Wi-Fi and cellular modem), and the network. This document outlines best current practices for each of these subsystems to achieve reliable, low-latency performance in the field.<a href="#section-1-1" class="pilcrow">¶</a></p>
 <div id="conventions-and-definitions">
 <section id="section-1.1">
         <h3 id="name-conventions-and-definitions">
@@ -1266,13 +1273,14 @@ appear in all capitals, as shown here.<a href="#section-1.1-1" class="pilcrow">�
 <p id="section-2.1-1">To enable UDP-based transport stacks (such as QUIC) to utilize L4S, the OS <span class="bcp14">MUST</span> provide APIs that allow applications to:<a href="#section-2.1-1" class="pilcrow">¶</a></p>
 <ol start="1" type="1" class="normal type-1" id="section-2.1-2">
 <li id="section-2.1-2.1">
-            <p id="section-2.1-2.1.1">Set the ECN codepoint to <code>ECT(1)</code> <span>[<a href="#RFC9331" class="cite xref">RFC9331</a>]</span> on outgoing packets.<a href="#section-2.1-2.1.1" class="pilcrow">¶</a></p>
+            <p id="section-2.1-2.1.1">Set the ECN codepoint <span>[<a href="#RFC9331" class="cite xref">RFC9331</a>]</span> on outgoing packets.<a href="#section-2.1-2.1.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-2.1-2.2">
-            <p id="section-2.1-2.2.1">Read the ECN codepoints (specifically <code>CE</code> markings) of incoming packets.<a href="#section-2.1-2.2.1" class="pilcrow">¶</a></p>
+            <p id="section-2.1-2.2.1">Read the ECN codepoints of incoming packets.<a href="#section-2.1-2.2.1" class="pilcrow">¶</a></p>
 </li>
         </ol>
-<p id="section-2.1-3">These capabilities <span class="bcp14">MUST</span> be exposed via standard socket options (e.g., <code>IP_TOS</code> and <code>IPV6_TCLASS</code> for setting, and <code>IP_RECVTOS</code> and <code>IPV6_RECVTCLASS</code> via ancillary data for reading) and <span class="bcp14">MUST NOT</span> be restricted by default security policies for standard application sockets.<a href="#section-2.1-3" class="pilcrow">¶</a></p>
+<p id="section-2.1-3">These capabilities <span class="bcp14">MUST</span> be exposed via standard socket APIs (e.g., <code>IP_TOS</code> and <code>IPV6_TCLASS</code> for setting, and <code>IP_RECVTOS</code> and <code>IPV6_RECVTCLASS</code> via ancillary data for reading) and <span class="bcp14">MUST NOT</span> be restricted by default security policies for standard application sockets. The APIs <span class="bcp14">MUST</span> allow reading the ECN codepoints on a per-packet basis. and <span class="bcp14">MUST</span> allow setting the ECN codepoints either on a per-socket or per-packet basis. The detailed explanation of configuring UDP sockets for ECN for common platforms is covered in <span>[<a href="#I-D.ietf-tsvwg-udp-ecn" class="cite xref">I-D.ietf-tsvwg-udp-ecn</a>]</span>.<a href="#section-2.1-3" class="pilcrow">¶</a></p>
+<p id="section-2.1-4">UDP-based transport stacks <span class="bcp14">SHOULD</span> mark L4S-capable traffic as ECT(1) and <span class="bcp14">MUST NOT</span> mark queue-building traffic (e.g., traffic using legacy congestion controls) as ECT(1). Link layers <span class="bcp14">MUST</span> respond to misbehaving stack as discussed in {#defense-against-misbehaving-traffic}.<a href="#section-2.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="tcp-support-detection-and-bootstrapping">
@@ -1280,17 +1288,17 @@ appear in all capitals, as shown here.<a href="#section-1.1-1" class="pilcrow">�
         <h3 id="name-tcp-support-detection-and-b">
 <a href="#section-2.2" class="section-number selfRef">2.2. </a><a href="#name-tcp-support-detection-and-b" class="section-name selfRef">TCP support detection and bootstrapping</a>
         </h3>
-<p id="section-2.2-1">To deploy receive-side L4S for TCP, host operating systems and link-layers must negotiate ECN support and verify path integrity.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
-<p id="section-2.2-2">A client that wants to be resilient to networks that don't support L4S <span class="bcp14">MUST</span> follow the negotiation steps described in <span>[<a href="#RFC3168" class="cite xref">RFC3168</a>]</span>, <span>[<a href="#RFC8311" class="cite xref">RFC8311</a>]</span>, <span>[<a href="#RFC9331" class="cite xref">RFC9331</a>]</span>, and <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>
-Negotiation of ECN support for TCP follows the Classic ECN setup defined in Section 6.1.1 <span>[<a href="#RFC3168" class="cite xref">RFC3168</a>]</span> and recapped in Section 1.4 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>.
-Negotiation of AccECN support is defined in Section 3.1 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span><a href="#section-2.2-2" class="pilcrow">¶</a></p>
-<p id="section-2.2-3">These negotiations <span class="bcp14">MUST</span> include the retry mechanisms described in Section 3.1.4 and Section 3.2.3.2.2 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>.<a href="#section-2.2-3" class="pilcrow">¶</a></p>
+<p id="section-2.2-1">To allow L4S-capable senders (e.g., Internet servers) to take advantage of L4S, host operating systems and link-layers must negotiate ECN support and verify path integrity as described in Section 1.4 and Section 3 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
 <div id="per-network-detection-and-latency-mitigation">
 <section id="section-2.2.1">
           <h4 id="name-per-network-detection-and-l">
 <a href="#section-2.2.1" class="section-number selfRef">2.2.1. </a><a href="#name-per-network-detection-and-l" class="section-name selfRef">Per-network detection and latency mitigation</a>
           </h4>
-<p id="section-2.2.1-1">Latency can be critical to mobile applications, and fallback paths dependent on retransmissions and timeouts can lead to a degraded user experience in flows where L4S fails to be negotiated in any of the steps listed in Section 2.2. A host system that wants to be resilient to this <span class="bcp14">MAY</span> attempt a connectivity check to a known, L4S-supporting service. In case of check failure, the result can be used to turn off L4S negotiation attempts for a given network, represented by PLMN/APN (in carrier networks) or BSSID (in Wi-Fi networks). Additionally, the host system <span class="bcp14">MAY</span> maintain additional L4S support cache on a per-host or per-IP-address, or other basis. When maintaining such lists, entries should be retired after a preferred TTL (e.g., 7 days) and preferably indexed per network to disambiguate between host and path L4S support.<a href="#section-2.2.1-1" class="pilcrow">¶</a></p>
+<p id="section-2.2.1-1">If misconfigured networks or servers drop ECN negotiation packets, and the client does not retry without ECN negotiation, TCP connections will fail. Therefore, clients <span class="bcp14">MUST</span> implement retry strategies that disable ECN negotiation, as described in Section 3.1.4 and Section 3.2.3.2.2 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>. Note that a server replying with Not-ECT is does not require any additional retries and is not considered a failure.<a href="#section-2.2.1-1" class="pilcrow">¶</a></p>
+<p id="section-2.2.1-2">Latency is critical to mobile applications, and retry strategies dependent on retransmissions and timeouts can lead to a degraded user experience. To ensure that L4S can be safely enabled without degrading the user experience in the presence of networks or servers that drop ECN negotiations or Accurate ECN TCP options, the client <span class="bcp14">SHOULD</span> balance implementing the retry strategies in section 3 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span> with mechanisms to reduce the latency impact of retransmissions. A possible strategy is to only attempt ECN negotiation on the first SYN to a new server. Additionally, the host <span class="bcp14">MAY</span> cache ECN negotiation timeouts on a per-host or per-IP-address, or other basis.<a href="#section-2.2.1-2" class="pilcrow">¶</a></p>
+<p id="section-2.2.1-3">If a host is in a network that blocks all ECN negotiation regardless of destination, all TCP connections will suffer latency impact. This will degrade the user experience even if failures are cached, because any connection to a server that is not in the cache will suffer an additional round trip delay.<a href="#section-2.2.1-3" class="pilcrow">¶</a></p>
+<p id="section-2.2.1-4">A host system that wants to be resilient to this <span class="bcp14">MAY</span> attempt a connectivity check to a known, L4S-supporting service. In case of check failure, the result can be used to turn off L4S negotiation attempts for a given network, represented by PLMN/APN (in carrier networks) or SSID/BSSID (in Wi-Fi networks).<a href="#section-2.2.1-4" class="pilcrow">¶</a></p>
+<p id="section-2.2.1-5">When maintaining such lists, entries <span class="bcp14">SHOULD</span> be retired after a reasonable TTL (e.g. 7 days), and <span class="bcp14">SHOULD</span> prefer information from more frequently used destinations.<a href="#section-2.2.1-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1302,37 +1310,37 @@ Negotiation of AccECN support is defined in Section 3.1 of <span>[<a href="#RFC9
       <h2 id="name-link-layer-subsystems-requi">
 <a href="#section-3" class="section-number selfRef">3. </a><a href="#name-link-layer-subsystems-requi" class="section-name selfRef">Link-layer Subsystems Requirements</a>
       </h2>
-<p id="section-3-1">The link-layer (modem and WiFi) subsystems manage the link-layer transmission over the radio interface and perform significant queueing on the uplink path.<a href="#section-3-1" class="pilcrow">¶</a></p>
+<p id="section-3-1">Link-layer subsystems, such as the cellular modem and Wi-Fi schedule and manage the link-layer transmission over the physical medium interface. These systems typically perform significant queueing on the transmit path, and sometimes on the receive path as well.<a href="#section-3-1" class="pilcrow">¶</a></p>
 <div id="link-layer-inbound-packet-reordering">
 <section id="section-3.1">
         <h3 id="name-link-layer-inbound-packet-r">
 <a href="#section-3.1" class="section-number selfRef">3.1. </a><a href="#name-link-layer-inbound-packet-r" class="section-name selfRef">Link-layer inbound packet reordering</a>
         </h3>
-<p id="section-3.1-1">Some link-layers provide strong ordering guarantees for inbound packets by assigning a link-layer sequence number to each packet and buffering incoming packets so they can be presented to the host operating system in order. In particular, out-of-order packet delivery is common in cellular networks due to multi-path transmission. This causes out-of-order packets to be delayed until all previous packets have been received, and causes latency spikes when packets are lost due to transmission errors.<a href="#section-3.1-1" class="pilcrow">¶</a></p>
-<p id="section-3.1-2">Delaying received packets increases latency, which is contrary to the low-latency goals of L4S. Also, by artificially introducing delays that were not imposed by the network, it will reduce the accuracy of protocol rate estimation. Many contemporary protocol stacks are generally well-equipped to handle out-of-order packets.<a href="#section-3.1-2" class="pilcrow">¶</a></p>
+<p id="section-3.1-1">Some link layers provide strong ordering guarantees for inbound packets by assigning a link-layer sequence number to each packet and buffering incoming packets so they can be presented to the host operating system in order. In particular, cellular networks often perform out-of-order packet delivery at the physical layer, but require the cellular modem to deliver received packets to the host operating system in order. When packets are received out of order on the air interface, the modem waits up to a network-configurable timeout to receive all previous packets. This causes out-of-order packets to be delayed until all previous packets have been received, and causes latency spikes when packets are lost due to transmission errors.<a href="#section-3.1-1" class="pilcrow">¶</a></p>
+<p id="section-3.1-2">Delaying received packets increases latency, which is contrary to the low-latency goals of L4S. Also, by artificially introducing delays that were not imposed by the network, it reduces the accuracy of protocol rate estimation. The additional delays do not benefit contemporary protocol stacks, which are generally well-equipped to handle out-of-order packets.<a href="#section-3.1-2" class="pilcrow">¶</a></p>
 <p id="section-3.1-3">L4S-aware protocol stacks <span class="bcp14">MUST</span> be prepared to receive out-of-order packets.<a href="#section-3.1-3" class="pilcrow">¶</a></p>
-<p id="section-3.1-4">Link-layers <span class="bcp14">MUST NOT</span> buffer inbound packets in a way that imposes measurable latency to the protocol stack.<a href="#section-3.1-4" class="pilcrow">¶</a></p>
+<p id="section-3.1-4">Link-layers <span class="bcp14">MUST NOT</span> buffer inbound L4S packets in a way that imposes measurable latency to the protocol stack.<a href="#section-3.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="multi-queue-scheduling-and-bounded-latency">
+<div id="multi-queue-scheduling-and-bounded-latency-queueing">
 <section id="section-3.2">
         <h3 id="name-multi-queue-scheduling-and-">
-<a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-multi-queue-scheduling-and-" class="section-name selfRef">Multi-Queue Scheduling and Bounded Latency</a>
+<a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-multi-queue-scheduling-and-" class="section-name selfRef">Multi-Queue Scheduling and Bounded Latency Queueing</a>
         </h3>
-<p id="section-3.2-1">Any link layer that supports L4S <span class="bcp14">MUST</span> support a low-latency queue designated for Non-Queue-Building <span>[<a href="#RFC9956" class="cite xref">RFC9956</a>]</span> traffic. This queue <span class="bcp14">MUST</span> be bounded as described in Section 3.4 and Section 3.5.
-Some modem systems are known to already support high-priority and low-priority queues. These queues are typically not latency-bounded, so in the presence of such queues, low-latency queue <span class="bcp14">MUST</span> be distinct from them. An example configuration might be:<a href="#section-3.2-1" class="pilcrow">¶</a></p>
+<p id="section-3.2-1">Any link layer that supports L4S <span class="bcp14">MUST</span> provide a low-latency queue designated for L4S traffic and Non-Queue-Building traffic (<span>[<a href="#RFC9956" class="cite xref">RFC9956</a>]</span> section 3.3). This queue <span class="bcp14">MUST</span> be bounded as described in {#uplink-aqm} and {#defense-against-misbehaving-traffic}.
+Some link-layer systems already support high-priority and low-priority queues. These queues are typically not latency-bounded, and therefore cannot guarantee the low-latency benefits of L4S. If the link layer provides such queues, low-latency queue <span class="bcp14">MUST</span> be distinct from them. An example configuration might be:<a href="#section-3.2-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-3.2-2.1">
-            <p id="section-3.2-2.1.1"><strong>L4S/Low-Latency Queue:</strong> For <code>ECT(1)</code> and DSCP-45 marked traffic.<a href="#section-3.2-2.1.1" class="pilcrow">¶</a></p>
+            <p id="section-3.2-2.1.1"><strong>Low-Latency Queue:</strong> For L4S and other Non-Queue-Building traffic.<a href="#section-3.2-2.1.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-3.2-2.2">
-            <p id="section-3.2-2.2.1"><strong>High-Priority Queue:</strong> For signaling, IMS voice (VoLTE/VoNR), and other critical real-time traffic.<a href="#section-3.2-2.2.1" class="pilcrow">¶</a></p>
+            <p id="section-3.2-2.2.1"><strong>High-Priority Queue:</strong> For high priority but potentially queue-building traffic.<a href="#section-3.2-2.2.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-3.2-2.3">
             <p id="section-3.2-2.3.1"><strong>Low-Priority Queue:</strong> For queue-building traffic (e.g., CUBIC/Reno) and bulk data.<a href="#section-3.2-2.3.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
-<p id="section-3.2-3">The scheduler <span class="bcp14">MUST</span> prioritize the Low-Latency Queue, but <span class="bcp14">SHOULD</span> use a scheduling algorithm (e.g., Weighted Fair Queueing) that prevents starvation of other queues.<a href="#section-3.2-3" class="pilcrow">¶</a></p>
+<p id="section-3.2-3">Link layers <span class="bcp14">SHOULD</span> ensure that the L4S queue does not starve the other queues if offered L4S traffic is higher than available bandwidth. Such prioritisation <span class="bcp14">SHOULD</span> use a scheduling algorithm (e.g., Weighted Fair Queueing) and aim to minimize the queue buildup in the Low-Latency queue.<a href="#section-3.2-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="packet-classification">
@@ -1346,21 +1354,21 @@ Some modem systems are known to already support high-priority and low-priority q
             <p id="section-3.3-2.1.1">Packets carrying the <code>ECT(1)</code> or <code>CE</code> bits in the IP header <span class="bcp14">MUST</span> be steered to the low-latency queue.<a href="#section-3.3-2.1.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-3.3-2.2">
-            <p id="section-3.3-2.2.1">The modem <span class="bcp14">SHOULD</span> also support mapping to the low-latency queue based on the Non-Queue-Building (NQB) DSCP value (45) <span>[<a href="#RFC9956" class="cite xref">RFC9956</a>]</span> as an alternative or supplementary classifier. Because DSCP markings are frequently bleached at carrier interconnect boundaries, ECN mapping remains the most reliable end-to-end classifier for mobile networks.<a href="#section-3.3-2.2.1" class="pilcrow">¶</a></p>
+            <p id="section-3.3-2.2.1">The link-layer <span class="bcp14">SHOULD</span> also support mapping to the low-latency queue based on the Non-Queue-Building (NQB) DSCP value (45) <span>[<a href="#RFC9956" class="cite xref">RFC9956</a>]</span> as an alternative or supplementary classifier. Because DSCP markings are frequently bleached at carrier interconnect boundaries, ECN mapping remains the most reliable end-to-end classifier for mobile networks.<a href="#section-3.3-2.2.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
 <p id="section-3.3-3">Link-layer networks <span class="bcp14">MUST NOT</span> attempt to dynamically classify packets for the low-latency queue using heuristic traffic inference or Deep Packet Inspection (DPI). Classification <span class="bcp14">MUST</span> rely solely on the explicit packet markings set by the application endpoints. This ensures compatibility with fully encrypted payloads and aligns with the end-to-end principle and permissionless innovation, as discussed in the ISP deployment observations in <span>[<a href="#I-D.livingood-low-latency-deployment" class="cite xref">I-D.livingood-low-latency-deployment</a>]</span> (which also contains details on Wi-Fi link-layer queuing considerations).<a href="#section-3.3-3" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="uplink-active-queue-management-aqm">
+<div id="uplink-aqm">
 <section id="section-3.4">
         <h3 id="name-uplink-active-queue-managem">
 <a href="#section-3.4" class="section-number selfRef">3.4. </a><a href="#name-uplink-active-queue-managem" class="section-name selfRef">Uplink Active Queue Management (AQM)</a>
         </h3>
-<p id="section-3.4-1">The link-layer uplink buffer is often a bottleneck due to cellular grant scheduling. When the uplink queue builds up, the modem <span class="bcp14">MUST</span> perform ECN marking:<a href="#section-3.4-1" class="pilcrow">¶</a></p>
+<p id="section-3.4-1">The link-layer uplink buffer is often a bottleneck due to cellular grant scheduling. When the uplink queue builds up, the link-layer <span class="bcp14">MUST</span> perform ECN marking:<a href="#section-3.4-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-3.4-2.1">
-            <p id="section-3.4-2.1.1">If the sojourn time of a packet in the L4S queue exceeds a shallow threshold (e.g., 1 ms to 5 ms), the modem <span class="bcp14">MUST</span> mark the packet as <code>CE</code> in the IP header before transmitting it, rather than dropping it.<a href="#section-3.4-2.1.1" class="pilcrow">¶</a></p>
+            <p id="section-3.4-2.1.1">If the sojourn time of a packet in the L4S queue exceeds a shallow threshold (e.g., 1 ms to 5 ms), the link-layer <span class="bcp14">MUST</span> mark the packet as <code>CE</code> in the IP header before transmitting it, rather than dropping it.<a href="#section-3.4-2.1.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-3.4-2.2">
             <p id="section-3.4-2.2.1">Packets <span class="bcp14">MUST</span> only be dropped if the queue reaches the maximum designated size.<a href="#section-3.4-2.2.1" class="pilcrow">¶</a></p>
@@ -1368,7 +1376,7 @@ Some modem systems are known to already support high-priority and low-priority q
         </ul>
 </section>
 </div>
-<div id="defense-against-misbehaving-traffic-queue-protection">
+<div id="defense-against-misbehaving-traffic">
 <section id="section-3.5">
         <h3 id="name-defense-against-misbehaving">
 <a href="#section-3.5" class="section-number selfRef">3.5. </a><a href="#name-defense-against-misbehaving" class="section-name selfRef">Defense Against Misbehaving Traffic (Queue Protection)</a>
@@ -1376,13 +1384,13 @@ Some modem systems are known to already support high-priority and low-priority q
 <p id="section-3.5-1">Applications may mark their traffic as NQB or <code>ECT(1)</code> without implementing L4S congestion control, causing queue build-up in the low-latency queue.<a href="#section-3.5-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-3.5-2.1">
-            <p id="section-3.5-2.1.1">The modem <span class="bcp14">MUST</span> enforce a strict size limit on the Low-Latency Queue (e.g. 16kB). If the queue is full, incoming packets <span class="bcp14">MUST</span> be dropped.<a href="#section-3.5-2.1.1" class="pilcrow">¶</a></p>
+            <p id="section-3.5-2.1.1">The link-layer <span class="bcp14">MUST</span> enforce a strict size limit on the Low-Latency Queue. If the queue is full, incoming packets <span class="bcp14">MUST</span> be dropped.<a href="#section-3.5-2.1.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-3.5-2.2">
-            <p id="section-3.5-2.2.1">The modem <span class="bcp14">SHOULD</span> monitor queue build-up and latency contributions of individual flows within the L4S queue.<a href="#section-3.5-2.2.1" class="pilcrow">¶</a></p>
+            <p id="section-3.5-2.2.1">The link-layer <span class="bcp14">SHOULD</span> monitor queue build-up and latency contributions of individual flows within the L4S queue.<a href="#section-3.5-2.2.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-3.5-2.3">
-            <p id="section-3.5-2.3.1">If a flow is detected to be queue-building (e.g., contributing to sustained queue latency above the marking threshold without responding to CE marks), the modem <span class="bcp14">MUST</span> demote the flow and redirect its packets to a different queue.<a href="#section-3.5-2.3.1" class="pilcrow">¶</a></p>
+            <p id="section-3.5-2.3.1">If a flow is detected to be queue-building (e.g. contributing to sustained queue latency above the marking threshold without responding to CE marks), the link-layer <span class="bcp14">SHOULD</span> demote the flow and redirect its packets to a different queue.<a href="#section-3.5-2.3.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
 </section>
@@ -1392,25 +1400,24 @@ Some modem systems are known to already support high-priority and low-priority q
         <h3 id="name-transparency-and-bleach-pre">
 <a href="#section-3.6" class="section-number selfRef">3.6. </a><a href="#name-transparency-and-bleach-pre" class="section-name selfRef">Transparency and Bleach Prevention</a>
         </h3>
-<p id="section-3.6-1">The modem <span class="bcp14">MUST NOT</span> modify the ECN bits, DSCP flags, or AccECN TCP options (172 and 174) on low-latency-queue transit traffic, except for performing standard CE marking when congested.<a href="#section-3.6-1" class="pilcrow">¶</a></p>
+<p id="section-3.6-1">The link-layer <span class="bcp14">MUST NOT</span> modify the ECN bits, DSCP flags, or AccECN TCP options (172 and 174) on low-latency-queue transit traffic, except for performing standard CE marking in the event of queue buildup.<a href="#section-3.6-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
 </div>
-<div id="middlebox-requirements">
+<div id="on-path-node-requirements">
 <section id="section-4">
-      <h2 id="name-middlebox-requirements">
-<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-middlebox-requirements" class="section-name selfRef">Middlebox Requirements</a>
+      <h2 id="name-on-path-node-requirements">
+<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-on-path-node-requirements" class="section-name selfRef">On-Path Node Requirements</a>
       </h2>
-<p id="section-4-1">Middleboxes include cellular core network elements (such as the UPF and PGW), firewalls, NATs, and deep packet inspection (DPI) appliances.<a href="#section-4-1" class="pilcrow">¶</a></p>
-<p id="section-4-2">Middleboxes <span class="bcp14">MUST NOT</span> perform network-based classification or rewrite ECN/DSCP markings based on traffic heuristics or DPI. In accordance with <span>[<a href="#I-D.livingood-low-latency-deployment" class="cite xref">I-D.livingood-low-latency-deployment</a>]</span>, active classification decisions <span class="bcp14">MUST</span> be left to the application endpoints, and middleboxes <span class="bcp14">MUST</span> restrict their role to passive, transparent forwarding.<a href="#section-4-2" class="pilcrow">¶</a></p>
+<p id="section-4-1">On-Path Nodes <span class="bcp14">MUST NOT</span> perform network-based classification or rewrite ECN/DSCP markings based on traffic heuristics or DPI. In accordance with <span>[<a href="#I-D.livingood-low-latency-deployment" class="cite xref">I-D.livingood-low-latency-deployment</a>]</span>, active classification decisions <span class="bcp14">MUST</span> be left to the application endpoints, and on-path devices <span class="bcp14">MUST</span> restrict their role to marking the ECN bits in the event of a queue forming.<a href="#section-4-1" class="pilcrow">¶</a></p>
 <div id="ecn-and-accecn-transparency">
 <section id="section-4.1">
         <h3 id="name-ecn-and-accecn-transparency">
 <a href="#section-4.1" class="section-number selfRef">4.1. </a><a href="#name-ecn-and-accecn-transparency" class="section-name selfRef">ECN and AccECN Transparency</a>
         </h3>
-<p id="section-4.1-1">Middleboxes <span class="bcp14">MUST NOT</span> clear (bleach) ECN bits, in accordance with <span>[<a href="#RFC3168" class="cite xref">RFC3168</a>]</span>. They <span class="bcp14">MUST</span> preserve <code>ECT(0)</code>, <code>ECT(1)</code>, and <code>CE</code> markings on all IP packets.
-Furthermore, middleboxes <span class="bcp14">MUST NOT</span> strip, modify, or drop packets containing TCP options 172 or 174.<a href="#section-4.1-1" class="pilcrow">¶</a></p>
+<p id="section-4.1-1">On-Path Nodes <span class="bcp14">MUST NOT</span> clear (bleach) ECN bits, in accordance with <span>[<a href="#RFC3168" class="cite xref">RFC3168</a>]</span>. They <span class="bcp14">MUST</span> preserve <code>ECT(0)</code>, <code>ECT(1)</code>, and <code>CE</code> markings on all IP packets, except in the event of queue forming, where appropriate codepoints should be marked. Similarly, On-Path Nodes <span class="bcp14">MUST NOT</span> strip, modify, or drop packets containing TCP options 172 or 174.<a href="#section-4.1-1" class="pilcrow">¶</a></p>
+<p id="section-4.1-2">Non-compliant behaviour can lead to timeouts and retransmits in the TCP handshake, and consequently to a degraded user experience.<a href="#section-4.1-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="handshake-forwarding">
@@ -1418,7 +1425,16 @@ Furthermore, middleboxes <span class="bcp14">MUST NOT</span> strip, modify, or d
         <h3 id="name-handshake-forwarding">
 <a href="#section-4.2" class="section-number selfRef">4.2. </a><a href="#name-handshake-forwarding" class="section-name selfRef">Handshake Forwarding</a>
         </h3>
-<p id="section-4.2-1">Middleboxes <span class="bcp14">MUST</span> transparently forward <code>SYN</code> and <code>SYN-ACK</code> packets that negotiate ECN or AccECN. Middleboxes <span class="bcp14">MUST NOT</span> drop TCP handshake packets solely due to the presence of ECN negotiation flags or AccECN TCP options.<a href="#section-4.2-1" class="pilcrow">¶</a></p>
+<p id="section-4.2-1">On-Path Nodes <span class="bcp14">MUST</span> transparently forward <code>SYN</code> and <code>SYN-ACK</code> packets that negotiate ECN or AccECN. On-Path Nodes <span class="bcp14">MUST NOT</span> drop TCP handshake packets solely due to the presence of ECN negotiation flags or AccECN TCP options.<a href="#section-4.2-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="mitigation-against-non-compliant-prioritization">
+<section id="section-4.3">
+        <h3 id="name-mitigation-against-non-comp">
+<a href="#section-4.3" class="section-number selfRef">4.3. </a><a href="#name-mitigation-against-non-comp" class="section-name selfRef">Mitigation Against Non-Compliant Prioritization</a>
+        </h3>
+<p id="section-4.3-1">On-Path Nodes <span class="bcp14">MUST NOT</span> act on <code>ECT(1)</code> flags to prioritize traffic in alternative, non-compliant ways unless a valid end-to-end feedback loop is actively maintained—where the network nodes execute compliant congestion marking and the transport endpoints record and reflect those markings in line with the transport-specific requirements specified in Section 4.2 of <span>[<a href="#RFC9331" class="cite xref">RFC9331</a>]</span>.<a href="#section-4.3-1" class="pilcrow">¶</a></p>
+<p id="section-4.3-2">Network deployments <span class="bcp14">MUST NOT</span> be marketed or operated as supporting L4S if they prioritize traffic via alternative heuristics (such as bandwidth allocation multipliers). The risk of such alternative mechanisms is incentivising marking <code>ECT(1)</code> codepoints in flows to be allocated into prioritised queues, without implementing full L4S congestion control as described in {#defense-against-misbehaving-traffic}. The convergence point of such behaviour would be a prevalence of <code>ECT(1)</code> marked traffic that does not respond to <code>CE</code> markings and congestion in the incorrectly prioritised queues.<a href="#section-4.3-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1428,7 +1444,7 @@ Furthermore, middleboxes <span class="bcp14">MUST NOT</span> strip, modify, or d
       <h2 id="name-security-considerations">
 <a href="#section-5" class="section-number selfRef">5. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
       </h2>
-<p id="section-5-1">L4S introduces potential abuse vectors where applications mark queue-building traffic as low-latency. As described in Section 3.5, the baseband/modem subsystem <span class="bcp14">MUST</span> deploy queue protection mechanisms to defend the low-latency queue from starvation and latency degradation.<a href="#section-5-1" class="pilcrow">¶</a></p>
+<p id="section-5-1">L4S introduces potential abuse vectors where applications mark queue-building traffic as low-latency. As described in {#defense-against-misbehaving-traffic}, the link-layer subsystem <span class="bcp14">MUST</span> deploy queue protection mechanisms to defend the low-latency queue from starvation and latency degradation.<a href="#section-5-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="iana-considerations">
@@ -1491,6 +1507,10 @@ Furthermore, middleboxes <span class="bcp14">MUST NOT</span> strip, modify, or d
 <a href="#section-7.2" class="section-number selfRef">7.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
         </h3>
 <dl class="references">
+<dt id="I-D.ietf-tsvwg-udp-ecn">[I-D.ietf-tsvwg-udp-ecn]</dt>
+        <dd>
+<span class="refAuthor">Duke, M.</span>, <span class="refTitle">"Configuring UDP Sockets for ECN for Common Platforms"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-tsvwg-udp-ecn-08</span>, <time datetime="2026-05-04" class="refDate">4 May 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-tsvwg-udp-ecn-08">https://datatracker.ietf.org/doc/html/draft-ietf-tsvwg-udp-ecn-08</a>&gt;</span>. </dd>
+<dd class="break"></dd>
 <dt id="I-D.livingood-low-latency-deployment">[I-D.livingood-low-latency-deployment]</dt>
       <dd>
 <span class="refAuthor">Livingood, J.</span>, <span class="refTitle">"ISP Dual Queue Networking Deployment Observations"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-livingood-low-latency-deployment-16</span>, <time datetime="2026-04-17" class="refDate">17 April 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-livingood-low-latency-deployment-16">https://datatracker.ietf.org/doc/html/draft-livingood-low-latency-deployment-16</a>&gt;</span>. </dd>
@@ -1510,7 +1530,7 @@ Furthermore, middleboxes <span class="bcp14">MUST NOT</span> strip, modify, or d
 <div dir="auto" class="left"><span class="org">Google LLC</span></div>
 <div class="email">
 <span>Email:</span>
-<a href="mailto:sebastian@poreba.me" class="email">sebastian@poreba.me</a>
+<a href="mailto:sporeba@google.com" class="email">sporeba@google.com</a>
 </div>
 </address>
 <address class="vcard">
@@ -1519,6 +1539,14 @@ Furthermore, middleboxes <span class="bcp14">MUST NOT</span> strip, modify, or d
 <div class="email">
 <span>Email:</span>
 <a href="mailto:lorenzo@google.com" class="email">lorenzo@google.com</a>
+</div>
+</address>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Sandeep Irlanki</span></div>
+<div dir="auto" class="left"><span class="org">Samsung R&amp;D</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:irlanki.s@samsung.com" class="email">irlanki.s@samsung.com</a>
 </div>
 </address>
 </section>
