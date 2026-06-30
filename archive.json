@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-06-28T01:09:52.847432+00:00",
+  "timestamp": "2026-06-30T01:06:04.545687+00:00",
   "repo": "fridek/draft-sporeba-mobile-l4s",
   "labels": [
     {
@@ -391,24 +391,26 @@
       "id": "PR_kwDOS2kUfc7rDJZZ",
       "title": "Link layer requirements section updates",
       "url": "https://github.com/fridek/draft-sporeba-mobile-l4s/pull/3",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "lcolitti",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "",
       "createdAt": "2026-06-26T16:12:38Z",
-      "updatedAt": "2026-06-26T16:12:38Z",
+      "updatedAt": "2026-06-29T09:56:41Z",
       "baseRepository": "fridek/draft-sporeba-mobile-l4s",
       "baseRefName": "main",
       "baseRefOid": "bcb341e5a363830fbc6c3fd9ef68921262576a6d",
       "headRepository": "fridek/draft-sporeba-mobile-l4s",
       "headRefName": "link-layer-updates",
       "headRefOid": "c09a43927ccfd085721916ebb1f48700b22baf3b",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-06-29T09:56:41Z",
+      "mergedAt": "2026-06-29T09:56:41Z",
+      "mergedBy": "fridek",
+      "mergeCommit": {
+        "oid": "a042f38b8b352ac440cf687157f15784151810e0"
+      },
       "comments": [],
       "reviews": []
     }
