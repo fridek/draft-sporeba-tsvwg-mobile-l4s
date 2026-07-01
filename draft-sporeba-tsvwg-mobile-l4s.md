@@ -2,7 +2,7 @@
 title: "Best Practices for L4S implementation for Mobile Devices"
 abbrev: "Mobile L4S"
 category: bcp
-docname: draft-sporeba-mobile-l4s-latest
+docname: draft-sporeba-tsvwg-mobile-l4s-latest
 submissiontype: IETF
 number:
 date:
@@ -20,8 +20,8 @@ keyword:
 venue:
 #  group: TSVWG
 #  type: Working Group
-  github: "fridek/draft-sporeba-mobile-l4s"
-  latest: "https://fridek.github.io/draft-sporeba-mobile-l4s/draft-sporeba-mobile-l4s.html"
+  github: "fridek/draft-sporeba-tsvwg-mobile-l4s"
+  latest: "https://fridek.github.io/draft-sporeba-tsvwg-mobile-l4s/draft-sporeba-tsvwg-mobile-l4s.html"
 
 author:
  -
