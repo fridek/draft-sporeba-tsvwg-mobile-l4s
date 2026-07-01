@@ -4,10 +4,10 @@
 
 This is the working area for the individual Internet-Draft, "Best Practices for L4S implementation for Mobile Devices".
 
-* [Editor's Copy](https://fridek.github.io/draft-sporeba-mobile-l4s/#go.draft-sporeba-mobile-l4s.html)
-* [Datatracker Page](https://datatracker.ietf.org/doc/draft-sporeba-mobile-l4s)
-* [Individual Draft](https://datatracker.ietf.org/doc/html/draft-sporeba-mobile-l4s)
-* [Compare Editor's Copy to Individual Draft](https://fridek.github.io/draft-sporeba-mobile-l4s/#go.draft-sporeba-mobile-l4s.diff)
+* [Editor's Copy](https://fridek.github.io/draft-sporeba-mobile-l4s/#go.draft-sporeba-tsvwg-mobile-l4s.html)
+* [Datatracker Page](https://datatracker.ietf.org/doc/draft-sporeba-tsvwg-mobile-l4s)
+* [Individual Draft](https://datatracker.ietf.org/doc/html/draft-sporeba-tsvwg-mobile-l4s)
+* [Compare Editor's Copy to Individual Draft](https://fridek.github.io/draft-sporeba-mobile-l4s/#go.draft-sporeba-tsvwg-mobile-l4s.diff)
 
 
 ## Contributing
