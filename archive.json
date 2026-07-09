@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-07-02T01:06:46.153927+00:00",
+  "timestamp": "2026-07-09T03:47:23.099097+00:00",
   "repo": "fridek/draft-sporeba-tsvwg-mobile-l4s",
   "labels": [
     {
@@ -411,6 +411,32 @@
       "mergeCommit": {
         "oid": "a042f38b8b352ac440cf687157f15784151810e0"
       },
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 8,
+      "id": "PR_kwDOS2kUfc7u4b3A",
+      "title": "Incorporate some of the tsvwg feedback",
+      "url": "https://github.com/fridek/draft-sporeba-tsvwg-mobile-l4s/pull/8",
+      "state": "OPEN",
+      "author": "fridek",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-07T14:56:21Z",
+      "updatedAt": "2026-07-07T14:56:21Z",
+      "baseRepository": "fridek/draft-sporeba-tsvwg-mobile-l4s",
+      "baseRefName": "main",
+      "baseRefOid": "675db6381bc66f3f9f4d702289dabeabb3c1b74f",
+      "headRepository": "fridek/draft-sporeba-tsvwg-mobile-l4s",
+      "headRefName": "sporeba-revision-00-feedback",
+      "headRefOid": "f83e62f51a1967f980a9fcea6b32dc181dca5627",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
       "comments": [],
       "reviews": []
     }
