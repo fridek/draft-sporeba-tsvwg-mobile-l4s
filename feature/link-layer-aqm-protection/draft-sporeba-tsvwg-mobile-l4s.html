@@ -1375,10 +1375,10 @@ Some link-layer systems already support high-priority and low-priority queues. T
             <p id="section-3.4-3.2.1"><strong>Two-Tier Congestion Signaling:</strong> The link-layer AQM implementation <span class="bcp14">SHOULD</span> implement the structural coupling via a dual-tiered time threshold layout to separate transient bursts from sustained overload:<a href="#section-3.4-3.2.1" class="pilcrow">¶</a></p>
 <ol start="1" type="1" class="normal type-1" id="section-3.4-3.2.2">
 <li id="section-3.4-3.2.2.1">
-                <p id="section-3.4-3.2.2.1.1"><strong>Instantaneous Burst Protection:</strong> To mitigate rapid latency spikes caused by sudden frame bursts or brief radio grant allocation delays, the Native L4S AQM component (generating $p'_L$ per <span>[<a href="#RFC9332" class="cite xref">RFC9332</a>]</span>) <span class="bcp14">SHOULD</span> utilize an instantaneous step threshold (<code>step_thresh</code>) configured strictly between 1 ms and 5 ms.<a href="#section-3.4-3.2.2.1.1" class="pilcrow">¶</a></p>
+                <p id="section-3.4-3.2.2.1.1"><strong>Instantaneous Burst Protection:</strong> To mitigate rapid latency spikes caused by sudden frame bursts or brief radio grant allocation delays, the Native L4S AQM component <span class="bcp14">SHOULD</span> utilize an instantaneous step threshold configured strictly between 1 ms and 5 ms.<a href="#section-3.4-3.2.2.1.1" class="pilcrow">¶</a></p>
 </li>
               <li id="section-3.4-3.2.2.2">
-                <p id="section-3.4-3.2.2.2.1"><strong>Sustained Congestion Tracking:</strong> The coupled Base AQM component (generating $p'$ per <span>[<a href="#RFC9332" class="cite xref">RFC9332</a>]</span>) <span class="bcp14">SHOULD</span> track long-term link stability against a broader target delay window configured between 15 ms and 50 ms, ensuring smooth end-to-end transport adaptation under sustained link load.<a href="#section-3.4-3.2.2.2.1" class="pilcrow">¶</a></p>
+                <p id="section-3.4-3.2.2.2.1"><strong>Sustained Congestion Tracking:</strong> The coupled Base AQM component <span class="bcp14">SHOULD</span> track long-term link stability against a broader target delay window configured between 15 ms and 50 ms, ensuring smooth end-to-end transport adaptation under sustained link load.<a href="#section-3.4-3.2.2.2.1" class="pilcrow">¶</a></p>
 </li>
             </ol>
 </li>
@@ -1390,7 +1390,7 @@ Some link-layer systems already support high-priority and low-priority queues. T
         <h3 id="name-defense-against-misbehaving">
 <a href="#section-3.5" class="section-number selfRef">3.5. </a><a href="#name-defense-against-misbehaving" class="section-name selfRef">Defense Against Misbehaving Traffic (Queue Protection)</a>
         </h3>
-<p id="section-3.5-1">Applications may incorrectly or maliciously mark non-responsive traffic as NQB or <code>ECT(1)</code> without implementing a scalable, responsive L4S congestion control algorithm. Because a standard dual-queue coupled framework lacks per-flow processing, a single non-responsive L4S stream will inflate the coupled congestion metrics ($p_{CL}$), driving up CE marking across the entire Low-Latency queue and increasing drops on the Classic queue side, unfairly penalizing well-behaved applications.<a href="#section-3.5-1" class="pilcrow">¶</a></p>
+<p id="section-3.5-1">Applications may incorrectly or maliciously mark non-responsive traffic as NQB or <code>ECT(1)</code> without implementing a scalable, responsive L4S congestion control algorithm. Because a standard dual-queue coupled framework lacks per-flow processing, a single non-responsive L4S stream will inflate the coupled congestion metrics, driving up CE marking across the entire Low-Latency queue and increasing drops on the Classic queue side, unfairly penalizing well-behaved applications.<a href="#section-3.5-1" class="pilcrow">¶</a></p>
 <p id="section-3.5-2">To defend the Low-Latency queue while remaining fully compliant with the normative boundaries of <span>[<a href="#RFC9332" class="cite xref">RFC9332</a>]</span>, mobile link-layer subsystems <span class="bcp14">MUST</span> enforce the following safeguards:<a href="#section-3.5-2" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-3.5-3.1">

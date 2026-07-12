@@ -308,16 +308,15 @@ Table of Contents
 
       1.  *Instantaneous Burst Protection:* To mitigate rapid latency
           spikes caused by sudden frame bursts or brief radio grant
-          allocation delays, the Native L4S AQM component (generating
-          $p'_L$ per [RFC9332]) SHOULD utilize an instantaneous step
-          threshold (step_thresh) configured strictly between 1 ms and 5
-          ms.
+          allocation delays, the Native L4S AQM component SHOULD utilize
+          an instantaneous step threshold configured strictly between 1
+          ms and 5 ms.
 
       2.  *Sustained Congestion Tracking:* The coupled Base AQM
-          component (generating $p'$ per [RFC9332]) SHOULD track long-
-          term link stability against a broader target delay window
-          configured between 15 ms and 50 ms, ensuring smooth end-to-end
-          transport adaptation under sustained link load.
+          component SHOULD track long-term link stability against a
+          broader target delay window configured between 15 ms and 50
+          ms, ensuring smooth end-to-end transport adaptation under
+          sustained link load.
 
 3.5.  Defense Against Misbehaving Traffic (Queue Protection)
 
@@ -325,10 +324,10 @@ Table of Contents
    traffic as NQB or ECT(1) without implementing a scalable, responsive
    L4S congestion control algorithm.  Because a standard dual-queue
    coupled framework lacks per-flow processing, a single non-responsive
-   L4S stream will inflate the coupled congestion metrics ($p_{CL}$),
-   driving up CE marking across the entire Low-Latency queue and
-   increasing drops on the Classic queue side, unfairly penalizing well-
-   behaved applications.
+   L4S stream will inflate the coupled congestion metrics, driving up CE
+   marking across the entire Low-Latency queue and increasing drops on
+   the Classic queue side, unfairly penalizing well-behaved
+   applications.
 
    To defend the Low-Latency queue while remaining fully compliant with
    the normative boundaries of [RFC9332], mobile link-layer subsystems
