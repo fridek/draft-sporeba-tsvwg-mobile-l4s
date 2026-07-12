@@ -42,6 +42,7 @@ normative:
   RFC8311:
   RFC9330:
   RFC9331:
+  RFC9332:
   RFC9768:
   RFC9956:
 
@@ -130,21 +131,26 @@ The link-layer MUST map uplink traffic to the low-latency queue based on ECN mar
 
 Link-layer networks MUST NOT attempt to dynamically classify packets for the low-latency queue using heuristic traffic inference or Deep Packet Inspection (DPI). Classification MUST rely solely on the explicit packet markings set by the application endpoints. This ensures compatibility with fully encrypted payloads and aligns with the end-to-end principle and permissionless innovation, as discussed in the ISP deployment observations in {{I-D.livingood-low-latency-deployment}} (which also contains details on Wi-Fi link-layer queuing considerations).
 
-
 ## Uplink Active Queue Management (AQM) {#uplink-aqm}
 
-The link-layer uplink buffer is often a bottleneck due to cellular grant scheduling. When the uplink queue builds up, the link-layer MUST perform ECN marking:
+The link-layer uplink buffer within mobile subsystems (such as cellular modems and Wi-Fi drivers) operates as a dynamic bottleneck subject to rapid capacity fluctuations driven by radio grant scheduling, carrier aggregation shifts, and physical layer channel fading. To ensure consistently low latency under these volatile conditions without inducing throughput degradation, implementations MUST deploy a Dual-Queue Coupled AQM framework adhering strictly to the functional design specifications of {{RFC9332}}.
 
-*  If the sojourn time of a packet in the L4S queue exceeds a shallow threshold (e.g., 1 ms to 5 ms), the link-layer MUST mark the packet as `CE` in the IP header before transmitting it, rather than dropping it.
-*  Packets MUST only be dropped if the queue reaches the maximum designated size.
+To optimize performance within the specific constraints of mobile device link-layer environments, the underlying AQM parameters MUST be configured as follows:
+
+* **Bandwidth-Independent Metrics:** In alignment with {{RFC9332}} Section 2.4, all internal marking states, delay targets, and queue boundaries MUST be calculated using packet sojourn time (expected time-to-service) rather than raw bytes or static packet counts. Expressing operational boundaries in units of time ensures that parameters remain invariant across fluctuating physical radio drain rates. Furthermore, this approach naturally accommodates large aggregated frame structures (e.g., up to 64kB aggregated packets passed via USB network interfaces or virtual overlay drivers) without triggering premature congestion signals.
+* **Two-Tier Congestion Signaling:** The link-layer AQM implementation SHOULD implement the structural coupling via a dual-tiered time threshold layout to separate transient bursts from sustained overload:
+    1. **Instantaneous Burst Protection:** To mitigate rapid latency spikes caused by sudden frame bursts or brief radio grant allocation delays, the Native L4S AQM component SHOULD utilize an instantaneous step threshold configured strictly between 1 ms and 5 ms.
+    2. **Sustained Congestion Tracking:** The coupled Base AQM component SHOULD track long-term link stability against a broader target delay window configured between 15 ms and 50 ms, ensuring smooth end-to-end transport adaptation under sustained link load.
 
 ## Defense Against Misbehaving Traffic (Queue Protection) {#defense-against-misbehaving-traffic}
 
-Applications may mark their traffic as NQB or `ECT(1)` without implementing L4S congestion control, causing queue build-up in the low-latency queue.
+Applications may incorrectly or maliciously mark non-responsive traffic as NQB or `ECT(1)` without implementing a scalable, responsive L4S congestion control algorithm. Because a standard dual-queue coupled framework lacks per-flow processing, a single non-responsive L4S stream will inflate the coupled congestion metrics, driving up CE marking across the entire Low-Latency queue and increasing drops on the Classic queue side, unfairly penalizing well-behaved applications.
 
-*  The link-layer MUST enforce a strict size limit on the Low-Latency Queue. If the queue is full, incoming packets MUST be dropped.
-*  The link-layer SHOULD monitor queue build-up and latency contributions of individual flows within the L4S queue.
-*  If a flow is detected to be queue-building (e.g. contributing to sustained queue latency above the marking threshold without responding to CE marks), the link-layer SHOULD demote the flow and redirect its packets to a different queue.
+To defend the Low-Latency queue while remaining fully compliant with the normative boundaries of {{RFC9332}}, mobile link-layer subsystems MUST enforce the following safeguards:
+
+* **Layered Congestion and Drop Progression:** Under standard operating conditions, congestion signaling for ECN-capable packets within the Low-Latency queue MUST rely entirely on CE marking. In accordance with the overload mandates of {{RFC9332}} Sections 2.5.1.1 and 4.2.3, if sustained saturation is detected (i.e., marking capacity is exhausted at 100% ECN signaling or the queue delay persistently exceeds operational bounds), the link-layer MUST introduce classic packet drops to both types of traffic to defend link integrity. Implementations SHOULD follow a strict architectural fallback progression: PI2 Gradual Marking -> Step AQM Burst Marking -> Overload Drops -> Tail-Drop.
+* **Buffer Limit Metrics:** The link-layer MUST enforce a strict ceiling on the maximum physical capacity of the Low-Latency queue. To prevent premature packet drops when handling heavily aggregated payloads, this absolute limit SHOULD be defined in terms of packet count (with a recommended default limit of 10,000 packets) rather than raw bytes, operating strictly as a final tail-drop mechanism at physical hardware capacity exhaustion.
+* **Flow Isolation Architecture:** As noted in {{RFC9332}} Section 4.2.2, scheduling weights alone cannot resolve long-term overload across a shared buffer. For mobile device environments requiring robust traffic defense against rogue applications, the link-layer MAY layer a per-flow queueing discipline or flow-fairness mechanism underneath the macro coupled dual-queue architecture. This design architecture isolates non-responsive streams into distinct internal queueing slots, shielding well-behaved applications from the coupled penalty while fully preserving the macro coupled framework requirements.
 
 ## Transparency and Bleach Prevention
 
