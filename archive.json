@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-07-09T03:47:23.099097+00:00",
+  "timestamp": "2026-07-12T03:27:11.769393+00:00",
   "repo": "fridek/draft-sporeba-tsvwg-mobile-l4s",
   "labels": [
     {
@@ -111,6 +111,54 @@
       "body": "",
       "createdAt": "2026-06-26T16:17:01Z",
       "updatedAt": "2026-06-26T16:17:01Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 9,
+      "id": "I_kwDOS2kUfc8AAAABIMFpDQ",
+      "title": "Provide operational guidelines for the low-latency queue thresholds for marking and hard drop limits",
+      "url": "https://github.com/fridek/draft-sporeba-tsvwg-mobile-l4s/issues/9",
+      "state": "OPEN",
+      "author": "fridek",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "[Ingemar expressed](https://mailarchive.ietf.org/arch/msg/tsvwg/ayzffQ_WNefOc3kcvWeZ9qZXD7M/) that \"it is not possible to state any clear values for the L4S marking thresholds.\" - my understanding of your argument is that different configurations (like a 5G RAN) would benefit from different thresholds and therefore we can't come up with one number. I think I could address that while remaining useful, by providing a guideline for what would be realistic and appropriate for mobile subsystems only (modem, wifi, etc.)\n[Sebastian writes](https://mailarchive.ietf.org/arch/msg/tsvwg/EUf9b2qMHv1_ZjHM0kbuH8GoUPY/) \"should that size be in fixed packets, fixed aggregate bytes or in expected time to service?\" I believe we would want to express it as sojourn time in the queue. There exist configurations which will write packets in a larger bulk (resulting in 100s of kB chunk burst) . There also exist less popular configurations like interfaces over USB where the IP packet size can be up to 64kB. This makes settling on a size-based boundary difficult.\n",
+      "createdAt": "2026-07-09T08:16:44Z",
+      "updatedAt": "2026-07-09T08:16:44Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 10,
+      "id": "I_kwDOS2kUfc8AAAABIMGBGQ",
+      "title": "Decide on the scoping of the document",
+      "url": "https://github.com/fridek/draft-sporeba-tsvwg-mobile-l4s/issues/10",
+      "state": "OPEN",
+      "author": "fridek",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "[Kevin pointed out](https://mailarchive.ietf.org/arch/msg/tsvwg/VIXDXiMbgTxW-eMvSnDFTNpTvcg/) that on-path requirements hardly belong in a BCP on mobile devices. My intent was to cover all the subsystems that are unique to mobile devices - system, link-layer subsystems, and what I personally think of as the \"last mile\" of the internet access - ISPs and carriers, with a lot of specific hardware unique to the mobile ecosystem.\nConversely, my view is that I shouldn't overspecify what the application-layer stacks do (since they will, based on my experience, do anything and everything technically permitted). These requirements are also covered well in other documents. I kept the scope of what's needed to enable correct L4S implementation in UDP-based stacks (like QUIC).\nOverall I'm more keen on cutting the scope to mobile device components only, or extracting it to another draft than expanding to applications.\n",
+      "createdAt": "2026-07-09T08:17:38Z",
+      "updatedAt": "2026-07-09T08:17:38Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 11,
+      "id": "I_kwDOS2kUfc8AAAABIMGZ1w",
+      "title": "Consider the details of out-of-order packet delivery statement",
+      "url": "https://github.com/fridek/draft-sporeba-tsvwg-mobile-l4s/issues/11",
+      "state": "OPEN",
+      "author": "fridek",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "[Ingemar points out](https://mailarchive.ietf.org/arch/msg/tsvwg/ayzffQ_WNefOc3kcvWeZ9qZXD7M/) the work on [draft-white-intarea-reordering](https://datatracker.ietf.org/doc/draft-white-intarea-reordering/) and that 4G spec requires in-order delivery while 5G spec makes it optional.\nWe want to make a normative statement on what's needed for optimal operation in a mobile device context\n",
+      "createdAt": "2026-07-09T08:18:34Z",
+      "updatedAt": "2026-07-09T08:18:34Z",
       "closedAt": null,
       "comments": []
     }
