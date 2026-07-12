@@ -1,0 +1,514 @@
+
+
+
+
+TSVWG Working Group                                            S. Poreba
+Internet-Draft                                                L. Colitti
+Intended status: Best Current Practice                        Google LLC
+Expires: 13 January 2027                                      S. Irlanki
+                                                             Samsung R&D
+                                                            12 July 2026
+
+
+        Best Practices for L4S implementation for Mobile Devices
+                 draft-sporeba-tsvwg-mobile-l4s-latest
+
+Abstract
+
+   This document documents best practices for deployment of Low Latency,
+   Low Loss, and Scalable Throughput (L4S) in mobile devices.  It
+   defines the responsibilities of the host operating system, the link-
+   layer (modem and WiFi) subsystems to ensure successful end-to-end
+   low-latency communication.
+
+About This Document
+
+   This note is to be removed before publishing as an RFC.
+
+   The latest revision of this draft can be found at
+   https://fridek.github.io/draft-sporeba-tsvwg-mobile-l4s/draft-
+   sporeba-tsvwg-mobile-l4s.html.  Status information for this document
+   may be found at https://datatracker.ietf.org/doc/draft-sporeba-tsvwg-
+   mobile-l4s/.
+
+   Source for this draft and an issue tracker can be found at
+   https://github.com/fridek/draft-sporeba-tsvwg-mobile-l4s.
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at https://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on 13 January 2027.
+
+Copyright Notice
+
+   Copyright (c) 2026 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents (https://trustee.ietf.org/
+   license-info) in effect on the date of publication of this document.
+   Please review these documents carefully, as they describe your rights
+   and restrictions with respect to this document.  Code Components
+   extracted from this document must include Revised BSD License text as
+   described in Section 4.e of the Trust Legal Provisions and are
+   provided without warranty as described in the Revised BSD License.
+
+Table of Contents
+
+   1.  Introduction
+     1.1.  Conventions and Definitions
+   2.  Host Operating System Requirements
+     2.1.  Socket APIs for UDP
+     2.2.  TCP support detection and bootstrapping
+       2.2.1.  Per-network detection and latency mitigation
+   3.  Link-layer Subsystems Requirements
+     3.1.  Link-layer inbound packet reordering
+     3.2.  Multi-Queue Scheduling and Bounded Latency Queueing
+     3.3.  Packet Classification
+     3.4.  Uplink Active Queue Management (AQM)
+     3.5.  Defense Against Misbehaving Traffic (Queue Protection)
+     3.6.  Transparency and Bleach Prevention
+   4.  On-Path Node Requirements
+     4.1.  ECN and AccECN Transparency
+     4.2.  Handshake Forwarding
+     4.3.  Mitigation Against Non-Compliant Prioritization
+   5.  Security Considerations
+   6.  IANA Considerations
+   7.  References
+     7.1.  Normative References
+     7.2.  Informative References
+   Authors' Addresses
+
+1.  Introduction
+
+   L4S (Low Latency, Low Loss, Scalable Throughput) [RFC9330] offers a
+   framework to significantly reduce queuing delay while maintaining
+   high throughput.  Mobile devices often have to react to quickly
+   changing connectivity conditions and may be subject to variable
+   throughput and connection quality.  This can cause large variations
+   in user-perceived latency and greater bufferbloat than in other
+   devices.  Deploying L4S in a mobile ecosystem requires co-operation
+   across multiple layers: the network stack, the host operating system
+   (OS), and link-layer drivers and firmware (e.g., Wi-Fi and cellular
+   modem), and the network.  This document outlines best current
+   practices for each of these subsystems to achieve reliable, low-
+   latency performance in the field.
+
+1.1.  Conventions and Definitions
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in
+   BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all
+   capitals, as shown here.
+
+2.  Host Operating System Requirements
+
+   The host operating system controls application-level network access
+   and hosts the primary TCP and UDP transport stacks.
+
+2.1.  Socket APIs for UDP
+
+   To enable UDP-based transport stacks (such as QUIC) to utilize L4S,
+   the OS MUST provide APIs that allow applications to:
+
+   1.  Set the ECN codepoint [RFC9331] on outgoing packets.
+
+   2.  Read the ECN codepoints of incoming packets.
+
+   These capabilities MUST be exposed via standard socket APIs (e.g.,
+   IP_TOS and IPV6_TCLASS for setting, and IP_RECVTOS and
+   IPV6_RECVTCLASS via ancillary data for reading) and MUST NOT be
+   restricted by default security policies for standard application
+   sockets.  The APIs MUST allow reading the ECN codepoints on a per-
+   packet basis. and MUST allow setting the ECN codepoints either on a
+   per-socket or per-packet basis.  The detailed explanation of
+   configuring UDP sockets for ECN for common platforms is covered in
+   [I-D.ietf-tsvwg-udp-ecn].
+
+   UDP-based transport stacks SHOULD mark L4S-capable traffic as ECT(1)
+   and MUST NOT mark queue-building traffic (e.g., traffic using legacy
+   congestion controls) as ECT(1).  Link layers MUST respond to
+   misbehaving stack as discussed in {#defense-against-misbehaving-
+   traffic}.
+
+2.2.  TCP support detection and bootstrapping
+
+   To allow L4S-capable senders (e.g., Internet servers) to take
+   advantage of L4S, host operating systems and link-layers must
+   negotiate ECN support and verify path integrity as described in
+   Section 1.4 and Section 3 of [RFC9768].
+
+2.2.1.  Per-network detection and latency mitigation
+
+   If misconfigured networks or servers drop ECN negotiation packets,
+   and the client does not retry without ECN negotiation, TCP
+   connections will fail.  Therefore, clients MUST implement retry
+   strategies that disable ECN negotiation, as described in
+   Section 3.1.4 and Section 3.2.3.2.2 of [RFC9768].  Note that a server
+   replying with Not-ECT is does not require any additional retries and
+   is not considered a failure.
+
+   Latency is critical to mobile applications, and retry strategies
+   dependent on retransmissions and timeouts can lead to a degraded user
+   experience.  To ensure that L4S can be safely enabled without
+   degrading the user experience in the presence of networks or servers
+   that drop ECN negotiations or Accurate ECN TCP options, the client
+   SHOULD balance implementing the retry strategies in section 3 of
+   [RFC9768] with mechanisms to reduce the latency impact of
+   retransmissions.  A possible strategy is to only attempt ECN
+   negotiation on the first SYN to a new server.  Additionally, the host
+   MAY cache ECN negotiation timeouts on a per-host or per-IP-address,
+   or other basis.
+
+   If a host is in a network that blocks all ECN negotiation regardless
+   of destination, all TCP connections will suffer latency impact.  This
+   will degrade the user experience even if failures are cached, because
+   any connection to a server that is not in the cache will suffer an
+   additional round trip delay.
+
+   A host system that wants to be resilient to this MAY attempt a
+   connectivity check to a known, L4S-supporting service.  In case of
+   check failure, the result can be used to turn off L4S negotiation
+   attempts for a given network, represented by PLMN/APN (in carrier
+   networks) or SSID/BSSID (in Wi-Fi networks).
+
+   When maintaining such lists, entries SHOULD be retired after a
+   reasonable TTL (e.g. 7 days), and SHOULD prefer information from more
+   frequently used destinations.
+
+3.  Link-layer Subsystems Requirements
+
+   Link-layer subsystems, such as the cellular modem and Wi-Fi schedule
+   and manage the link-layer transmission over the physical medium
+   interface.  These systems typically perform significant queueing on
+   the transmit path, and sometimes on the receive path as well.
+
+3.1.  Link-layer inbound packet reordering
+
+   Some link layers provide strong ordering guarantees for inbound
+   packets by assigning a link-layer sequence number to each packet and
+   buffering incoming packets so they can be presented to the host
+   operating system in order.  In particular, cellular networks often
+   perform out-of-order packet delivery at the physical layer, but
+   require the cellular modem to deliver received packets to the host
+   operating system in order.  When packets are received out of order on
+   the air interface, the modem waits up to a network-configurable
+   timeout to receive all previous packets.  This causes out-of-order
+   packets to be delayed until all previous packets have been received,
+   and causes latency spikes when packets are lost due to transmission
+   errors.
+
+   Delaying received packets increases latency, which is contrary to the
+   low-latency goals of L4S.  Also, by artificially introducing delays
+   that were not imposed by the network, it reduces the accuracy of
+   protocol rate estimation.  The additional delays do not benefit
+   contemporary protocol stacks, which are generally well-equipped to
+   handle out-of-order packets.
+
+   L4S-aware protocol stacks MUST be prepared to receive out-of-order
+   packets.
+
+   Link-layers MUST NOT buffer inbound L4S packets in a way that imposes
+   measurable latency to the protocol stack.
+
+3.2.  Multi-Queue Scheduling and Bounded Latency Queueing
+
+   Any link layer that supports L4S MUST provide a low-latency queue
+   designated for L4S traffic and Non-Queue-Building traffic ([RFC9956]
+   section 3.3).  This queue MUST be bounded as described in {#uplink-
+   aqm} and {#defense-against-misbehaving-traffic}. Some link-layer
+   systems already support high-priority and low-priority queues.  These
+   queues are typically not latency-bounded, and therefore cannot
+   guarantee the low-latency benefits of L4S.  If the link layer
+   provides such queues, low-latency queue MUST be distinct from them.
+   An example configuration might be:
+
+   *  *Low-Latency Queue:* For L4S and other Non-Queue-Building traffic.
+
+   *  *High-Priority Queue:* For high priority but potentially queue-
+      building traffic.
+
+   *  *Low-Priority Queue:* For queue-building traffic (e.g., CUBIC/
+      Reno) and bulk data.
+
+   Link layers SHOULD ensure that the L4S queue does not starve the
+   other queues if offered L4S traffic is higher than available
+   bandwidth.  Such prioritisation SHOULD use a scheduling algorithm
+   (e.g., Weighted Fair Queueing) and aim to minimize the queue buildup
+   in the Low-Latency queue.
+
+3.3.  Packet Classification
+
+   The link-layer MUST map uplink traffic to the low-latency queue based
+   on ECN markings:
+
+   *  Packets carrying the ECT(1) or CE bits in the IP header MUST be
+      steered to the low-latency queue.
+
+   *  The link-layer SHOULD also support mapping to the low-latency
+      queue based on the Non-Queue-Building (NQB) DSCP value (45)
+      [RFC9956] as an alternative or supplementary classifier.  Because
+      DSCP markings are frequently bleached at carrier interconnect
+      boundaries, ECN mapping remains the most reliable end-to-end
+      classifier for mobile networks.
+
+   Link-layer networks MUST NOT attempt to dynamically classify packets
+   for the low-latency queue using heuristic traffic inference or Deep
+   Packet Inspection (DPI).  Classification MUST rely solely on the
+   explicit packet markings set by the application endpoints.  This
+   ensures compatibility with fully encrypted payloads and aligns with
+   the end-to-end principle and permissionless innovation, as discussed
+   in the ISP deployment observations in
+   [I-D.livingood-low-latency-deployment] (which also contains details
+   on Wi-Fi link-layer queuing considerations).
+
+3.4.  Uplink Active Queue Management (AQM)
+
+   The link-layer uplink buffer within mobile subsystems (such as
+   cellular modems and Wi-Fi drivers) operates as a dynamic bottleneck
+   subject to rapid capacity fluctuations driven by radio grant
+   scheduling, carrier aggregation shifts, and physical layer channel
+   fading.  To ensure consistently low latency under these volatile
+   conditions without inducing throughput degradation, implementations
+   MUST deploy a Dual-Queue Coupled AQM framework adhering strictly to
+   the functional design specifications of [RFC9332].
+
+   To optimize performance within the specific constraints of mobile
+   device link-layer environments, the underlying AQM parameters MUST be
+   configured as follows:
+
+   *  *Bandwidth-Independent Metrics:* In alignment with [RFC9332]
+      Section 2.4, all internal marking states, delay targets, and queue
+      boundaries MUST be calculated using packet sojourn time (expected
+      time-to-service) rather than raw bytes or static packet counts.
+      Expressing operational boundaries in units of time ensures that
+      parameters remain invariant across fluctuating physical radio
+      drain rates.  Furthermore, this approach naturally accommodates
+      large aggregated frame structures (e.g., up to 64kB aggregated
+      packets passed via USB network interfaces or virtual overlay
+      drivers) without triggering premature congestion signals.
+
+   *  *Two-Tier Congestion Signaling:* The link-layer AQM implementation
+      SHOULD implement the structural coupling via a dual-tiered time
+      threshold layout to separate transient bursts from sustained
+      overload:
+
+      1.  *Instantaneous Burst Protection:* To mitigate rapid latency
+          spikes caused by sudden frame bursts or brief radio grant
+          allocation delays, the Native L4S AQM component (generating
+          $p'_L$ per [RFC9332]) SHOULD utilize an instantaneous step
+          threshold (step_thresh) configured strictly between 1 ms and 5
+          ms.
+
+      2.  *Sustained Congestion Tracking:* The coupled Base AQM
+          component (generating $p'$ per [RFC9332]) SHOULD track long-
+          term link stability against a broader target delay window
+          configured between 15 ms and 50 ms, ensuring smooth end-to-end
+          transport adaptation under sustained link load.
+
+3.5.  Defense Against Misbehaving Traffic (Queue Protection)
+
+   Applications may incorrectly or maliciously mark non-responsive
+   traffic as NQB or ECT(1) without implementing a scalable, responsive
+   L4S congestion control algorithm.  Because a standard dual-queue
+   coupled framework lacks per-flow processing, a single non-responsive
+   L4S stream will inflate the coupled congestion metrics ($p_{CL}$),
+   driving up CE marking across the entire Low-Latency queue and
+   increasing drops on the Classic queue side, unfairly penalizing well-
+   behaved applications.
+
+   To defend the Low-Latency queue while remaining fully compliant with
+   the normative boundaries of [RFC9332], mobile link-layer subsystems
+   MUST enforce the following safeguards:
+
+   *  *Layered Congestion and Drop Progression:* Under standard
+      operating conditions, congestion signaling for ECN-capable packets
+      within the Low-Latency queue MUST rely entirely on CE marking.  In
+      accordance with the overload mandates of [RFC9332] Sections
+      2.5.1.1 and 4.2.3, if sustained saturation is detected (i.e.,
+      marking capacity is exhausted at 100% ECN signaling or the queue
+      delay persistently exceeds operational bounds), the link-layer
+      MUST introduce classic packet drops to both types of traffic to
+      defend link integrity.  Implementations SHOULD follow a strict
+      architectural fallback progression: PI2 Gradual Marking -> Step
+      AQM Burst Marking -> Overload Drops -> Tail-Drop.
+
+   *  *Buffer Limit Metrics:* The link-layer MUST enforce a strict
+      ceiling on the maximum physical capacity of the Low-Latency queue.
+      To prevent premature packet drops when handling heavily aggregated
+      payloads, this absolute limit SHOULD be defined in terms of packet
+      count (with a recommended default limit of 10,000 packets) rather
+      than raw bytes, operating strictly as a final tail-drop mechanism
+      at physical hardware capacity exhaustion.
+
+   *  *Flow Isolation Architecture:* As noted in [RFC9332]
+      Section 4.2.2, scheduling weights alone cannot resolve long-term
+      overload across a shared buffer.  For mobile device environments
+      requiring robust traffic defense against rogue applications, the
+      link-layer MAY layer a per-flow queueing discipline or flow-
+      fairness mechanism underneath the macro coupled dual-queue
+      architecture.  This design architecture isolates non-responsive
+      streams into distinct internal queueing slots, shielding well-
+      behaved applications from the coupled penalty while fully
+      preserving the macro coupled framework requirements.
+
+3.6.  Transparency and Bleach Prevention
+
+   The link-layer MUST NOT modify the ECN bits, DSCP flags, or AccECN
+   TCP options (172 and 174) on low-latency-queue transit traffic,
+   except for performing standard CE marking in the event of queue
+   buildup.
+
+4.  On-Path Node Requirements
+
+   On-Path Nodes MUST NOT perform network-based classification or
+   rewrite ECN/DSCP markings based on traffic heuristics or DPI.  In
+   accordance with [I-D.livingood-low-latency-deployment], active
+   classification decisions MUST be left to the application endpoints,
+   and on-path devices MUST restrict their role to marking the ECN bits
+   in the event of a queue forming.
+
+4.1.  ECN and AccECN Transparency
+
+   On-Path Nodes MUST NOT clear (bleach) ECN bits, in accordance with
+   [RFC3168].  They MUST preserve ECT(0), ECT(1), and CE markings on all
+   IP packets, except in the event of queue forming, where appropriate
+   codepoints should be marked.  Similarly, On-Path Nodes MUST NOT
+   strip, modify, or drop packets containing TCP options 172 or 174.
+
+   Non-compliant behaviour can lead to timeouts and retransmits in the
+   TCP handshake, and consequently to a degraded user experience.
+
+4.2.  Handshake Forwarding
+
+   On-Path Nodes MUST transparently forward SYN and SYN-ACK packets that
+   negotiate ECN or AccECN.  On-Path Nodes MUST NOT drop TCP handshake
+   packets solely due to the presence of ECN negotiation flags or AccECN
+   TCP options.
+
+4.3.  Mitigation Against Non-Compliant Prioritization
+
+   On-Path Nodes MUST NOT act on ECT(1) flags to prioritize traffic in
+   alternative, non-compliant ways unless a valid end-to-end feedback
+   loop is actively maintained—where the network nodes execute compliant
+   congestion marking and the transport endpoints record and reflect
+   those markings in line with the transport-specific requirements
+   specified in Section 4.2 of [RFC9331].
+
+   Network deployments MUST NOT be marketed or operated as supporting
+   L4S if they prioritize traffic via alternative heuristics (such as
+   bandwidth allocation multipliers).  The risk of such alternative
+   mechanisms is incentivising marking ECT(1) codepoints in flows to be
+   allocated into prioritised queues, without implementing full L4S
+   congestion control as described in {#defense-against-misbehaving-
+   traffic}. The convergence point of such behaviour would be a
+   prevalence of ECT(1) marked traffic that does not respond to CE
+   markings and congestion in the incorrectly prioritised queues.
+
+5.  Security Considerations
+
+   L4S introduces potential abuse vectors where applications mark queue-
+   building traffic as low-latency.  As described in {#defense-against-
+   misbehaving-traffic}, the link-layer subsystem MUST deploy queue
+   protection mechanisms to defend the low-latency queue from starvation
+   and latency degradation.
+
+6.  IANA Considerations
+
+   This document has no IANA actions.
+
+7.  References
+
+7.1.  Normative References
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119,
+              DOI 10.17487/RFC2119, March 1997,
+              <https://www.rfc-editor.org/rfc/rfc2119>.
+
+   [RFC3168]  Ramakrishnan, K., Floyd, S., and D. Black, "The Addition
+              of Explicit Congestion Notification (ECN) to IP",
+              RFC 3168, DOI 10.17487/RFC3168, September 2001,
+              <https://www.rfc-editor.org/rfc/rfc3168>.
+
+   [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
+              2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
+              May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
+
+   [RFC8311]  Black, D., "Relaxing Restrictions on Explicit Congestion
+              Notification (ECN) Experimentation", RFC 8311,
+              DOI 10.17487/RFC8311, January 2018,
+              <https://www.rfc-editor.org/rfc/rfc8311>.
+
+   [RFC9330]  Briscoe, B., Ed., De Schepper, K., Bagnulo, M., and G.
+              White, "Low Latency, Low Loss, and Scalable Throughput
+              (L4S) Internet Service: Architecture", RFC 9330,
+              DOI 10.17487/RFC9330, January 2023,
+              <https://www.rfc-editor.org/rfc/rfc9330>.
+
+   [RFC9331]  De Schepper, K. and B. Briscoe, Ed., "The Explicit
+              Congestion Notification (ECN) Protocol for Low Latency,
+              Low Loss, and Scalable Throughput (L4S)", RFC 9331,
+              DOI 10.17487/RFC9331, January 2023,
+              <https://www.rfc-editor.org/rfc/rfc9331>.
+
+   [RFC9332]  De Schepper, K., Briscoe, B., Ed., and G. White, "Dual-
+              Queue Coupled Active Queue Management (AQM) for Low
+              Latency, Low Loss, and Scalable Throughput (L4S)",
+              RFC 9332, DOI 10.17487/RFC9332, January 2023,
+              <https://www.rfc-editor.org/rfc/rfc9332>.
+
+   [RFC9768]  Briscoe, B., Kühlewind, M., and R. Scheffenegger, "More
+              Accurate Explicit Congestion Notification (AccECN)
+              Feedback in TCP", RFC 9768, DOI 10.17487/RFC9768, April
+              2026, <https://www.rfc-editor.org/rfc/rfc9768>.
+
+   [RFC9956]  White, G., Fossati, T., and R. Geib, "A Non-Queue-Building
+              Per-Hop Behavior (NQB PHB) for Differentiated Services",
+              RFC 9956, DOI 10.17487/RFC9956, May 2026,
+              <https://www.rfc-editor.org/rfc/rfc9956>.
+
+7.2.  Informative References
+
+   [I-D.ietf-tsvwg-udp-ecn]
+              Duke, M., "Configuring UDP Sockets for ECN for Common
+              Platforms", Work in Progress, Internet-Draft, draft-ietf-
+              tsvwg-udp-ecn-08, 4 May 2026,
+              <https://datatracker.ietf.org/doc/html/draft-ietf-tsvwg-
+              udp-ecn-08>.
+
+   [I-D.livingood-low-latency-deployment]
+              Livingood, J., "ISP Dual Queue Networking Deployment
+              Observations", Work in Progress, Internet-Draft, draft-
+              livingood-low-latency-deployment-16, 17 April 2026,
+              <https://datatracker.ietf.org/doc/html/draft-livingood-
+              low-latency-deployment-16>.
+
+Authors' Addresses
+
+   Sebastian Poreba
+   Google LLC
+   Email: sporeba@google.com
+
+
+   Lorenzo Colitti
+   Google LLC
+   Email: lorenzo@google.com
+
+
+   Sandeep Irlanki
+   Samsung R&D
+   Email: irlanki.s@samsung.com
