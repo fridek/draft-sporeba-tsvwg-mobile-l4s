@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-07-12T03:27:11.769393+00:00",
+  "timestamp": "2026-07-14T02:52:04.680619+00:00",
   "repo": "fridek/draft-sporeba-tsvwg-mobile-l4s",
   "labels": [
     {
@@ -110,9 +110,17 @@
       "labels": [],
       "body": "",
       "createdAt": "2026-06-26T16:17:01Z",
-      "updatedAt": "2026-06-26T16:17:01Z",
+      "updatedAt": "2026-07-12T14:10:41Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "Irlanki",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Added https://github.com/fridek/draft-sporeba-tsvwg-mobile-l4s/pull/12 to address this issue. Please check and suggest modifications. ",
+          "createdAt": "2026-07-12T14:10:41Z",
+          "updatedAt": "2026-07-12T14:10:41Z"
+        }
+      ]
     },
     {
       "number": 9,
@@ -126,9 +134,17 @@
       "labels": [],
       "body": "[Ingemar expressed](https://mailarchive.ietf.org/arch/msg/tsvwg/ayzffQ_WNefOc3kcvWeZ9qZXD7M/) that \"it is not possible to state any clear values for the L4S marking thresholds.\" - my understanding of your argument is that different configurations (like a 5G RAN) would benefit from different thresholds and therefore we can't come up with one number. I think I could address that while remaining useful, by providing a guideline for what would be realistic and appropriate for mobile subsystems only (modem, wifi, etc.)\n[Sebastian writes](https://mailarchive.ietf.org/arch/msg/tsvwg/EUf9b2qMHv1_ZjHM0kbuH8GoUPY/) \"should that size be in fixed packets, fixed aggregate bytes or in expected time to service?\" I believe we would want to express it as sojourn time in the queue. There exist configurations which will write packets in a larger bulk (resulting in 100s of kB chunk burst) . There also exist less popular configurations like interfaces over USB where the IP packet size can be up to 64kB. This makes settling on a size-based boundary difficult.\n",
       "createdAt": "2026-07-09T08:16:44Z",
-      "updatedAt": "2026-07-09T08:16:44Z",
+      "updatedAt": "2026-07-12T14:10:17Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "Irlanki",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Added https://github.com/fridek/draft-sporeba-tsvwg-mobile-l4s/pull/12 to address this issue. Please check and suggest modifications. ",
+          "createdAt": "2026-07-12T14:10:17Z",
+          "updatedAt": "2026-07-12T14:10:17Z"
+        }
+      ]
     },
     {
       "number": 10,
@@ -474,13 +490,39 @@
       "labels": [],
       "body": "",
       "createdAt": "2026-07-07T14:56:21Z",
-      "updatedAt": "2026-07-07T14:56:21Z",
+      "updatedAt": "2026-07-13T08:03:45Z",
       "baseRepository": "fridek/draft-sporeba-tsvwg-mobile-l4s",
       "baseRefName": "main",
       "baseRefOid": "675db6381bc66f3f9f4d702289dabeabb3c1b74f",
       "headRepository": "fridek/draft-sporeba-tsvwg-mobile-l4s",
       "headRefName": "sporeba-revision-00-feedback",
       "headRefOid": "f83e62f51a1967f980a9fcea6b32dc181dca5627",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 12,
+      "id": "PR_kwDOS2kUfc7wvbSB",
+      "title": "Add sojourn metrics, dual-tier thresholds, and flow isolation parameters",
+      "url": "https://github.com/fridek/draft-sporeba-tsvwg-mobile-l4s/pull/12",
+      "state": "OPEN",
+      "author": "Irlanki",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-12T12:45:32Z",
+      "updatedAt": "2026-07-13T08:03:25Z",
+      "baseRepository": "fridek/draft-sporeba-tsvwg-mobile-l4s",
+      "baseRefName": "main",
+      "baseRefOid": "675db6381bc66f3f9f4d702289dabeabb3c1b74f",
+      "headRepository": "fridek/draft-sporeba-tsvwg-mobile-l4s",
+      "headRefName": "feature/link-layer-aqm-protection",
+      "headRefOid": "1f8e5f24a9de5133bc8e7dd6516e54928e614d8c",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
