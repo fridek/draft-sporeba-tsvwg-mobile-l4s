@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-07-14T02:52:04.680619+00:00",
+  "timestamp": "2026-07-16T02:57:31.201162+00:00",
   "repo": "fridek/draft-sporeba-tsvwg-mobile-l4s",
   "labels": [
     {
@@ -516,7 +516,7 @@
       "labels": [],
       "body": "",
       "createdAt": "2026-07-12T12:45:32Z",
-      "updatedAt": "2026-07-13T08:03:25Z",
+      "updatedAt": "2026-07-15T10:29:28Z",
       "baseRepository": "fridek/draft-sporeba-tsvwg-mobile-l4s",
       "baseRefName": "main",
       "baseRefOid": "675db6381bc66f3f9f4d702289dabeabb3c1b74f",
@@ -528,7 +528,48 @@
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOS2kUfc8AAAABGFUrUA",
+          "commit": {
+            "abbreviatedOid": "1f8e5f2"
+          },
+          "author": "fridek",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-07-15T10:28:29Z",
+          "updatedAt": "2026-07-15T10:28:30Z",
+          "comments": [
+            {
+              "originalPosition": 24,
+              "body": "Are these new normative statements or reiteration of other text?\n\nThere is a notes section in 9332 A.1 which starts with \"sojourn time is slow to detect bursts\" which describes bursty traffic sojourn time spreading recommendation - is this what you are referring to?\n\n",
+              "createdAt": "2026-07-15T10:28:30Z",
+              "updatedAt": "2026-07-15T10:28:30Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOS2kUfc8AAAABGFVD5Q",
+          "commit": {
+            "abbreviatedOid": "1f8e5f2"
+          },
+          "author": "fridek",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-07-15T10:29:28Z",
+          "updatedAt": "2026-07-15T10:29:28Z",
+          "comments": [
+            {
+              "originalPosition": 25,
+              "body": "I'm not sure I understand this statement. What are the implications of this number?",
+              "createdAt": "2026-07-15T10:29:28Z",
+              "updatedAt": "2026-07-15T10:29:28Z"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
