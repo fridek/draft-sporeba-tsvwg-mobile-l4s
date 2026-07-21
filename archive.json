@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-07-19T03:22:55.194978+00:00",
+  "timestamp": "2026-07-21T03:17:54.017010+00:00",
   "repo": "fridek/draft-sporeba-tsvwg-mobile-l4s",
   "labels": [
     {
@@ -516,7 +516,7 @@
       "labels": [],
       "body": "",
       "createdAt": "2026-07-12T12:45:32Z",
-      "updatedAt": "2026-07-19T03:13:25Z",
+      "updatedAt": "2026-07-20T10:46:39Z",
       "baseRepository": "fridek/draft-sporeba-tsvwg-mobile-l4s",
       "baseRefName": "main",
       "baseRefOid": "675db6381bc66f3f9f4d702289dabeabb3c1b74f",
@@ -583,9 +583,9 @@
           "comments": [
             {
               "originalPosition": 25,
-              "body": "9332 proposed two marking mechanisms for the L4S queue, both expressed in sojourn time (not packets or bytes).\r\n1) Step AQM (instant, per-packet): CE marks when L queue sojourn > step_thresh (1-5ms for WiFi/modem based on our testing). Provides immediate burst latency protection.\r\n2) PI2 controller (gradual, timer-based): CE marks based on max(classic delay, L4S delay) vs target (15-50ms based on our testing). This couples both queues. L4S shares the burden of classic queue congestion.\r\n\r\n//Role of Target\r\ntarget (15ms default)\r\n                         \u2502\r\n                         \u25bc\r\n    qdelay = max(delay_c, delay_l)\r\n         \u2502\r\n         \u25bc\r\n    \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\r\n    \u2502  calculate_probability()     \u2502  (every tupdate=16ms)\r\n    \u2502  delta = (qdelay - target)   \u2502\r\n    \u2502         \u00d7 alpha              \u2502\r\n    \u2502       + (qdelay - last_qdelay)\u2502\r\n    \u2502         \u00d7 beta               \u2502\r\n    \u2502  prob = prob + delta         \u2502\r\n    \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\r\n               \u2502\r\n         q->pi2.prob (0 to MAX_PROB = 0% to 100%)\r\n               \u2502\r\n       \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\r\n       \u25bc                       \u25bc\r\n   Classic queue              L4S queue\r\n   \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500              \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\r\n   TWO random rolls           ONE random roll\r\n   against prob               against (prob \u00d7 coupling_factor)\r\n                              \u2502\r\n   P(drop) = prob \u00d7 prob      P(mark) = prob \u00d7 coupling_factor\r\n         = prob\u00b2                   = prob \u00d7 2\r\n                              \u2502\r\n   e.g., prob=30%:            e.g., prob=30%:\r\n   drop = 30% \u00d7 30% = 9%     mark = 30% \u00d7 2 = 60%\r\n                              \u2502\r\n   If both rolls succeed:     If roll succeeds:\r\n   \u2192 DROP packet              \u2192 CE MARK packet\r\n   (non-ECT) or CE mark       (ECT(1) packet)\r\n   (ECT packet)",
+              "body": "9332 proposed two marking mechanisms for the L4S queue, both expressed in sojourn time (not packets or bytes).\r\n1) Step AQM (instant, per-packet): CE marks when L queue sojourn > step_thresh (1-5ms for WiFi/modem based on our testing). Provides immediate burst latency protection.\r\n2) PI2 controller (gradual, timer-based): CE marks based on max(classic delay, L4S delay) vs target (15-50ms based on our testing). This couples both queues. L4S shares the burden of classic queue congestion.\r\n\r\n//Role of Target\r\n<pre>\r\ntarget (15ms default)\r\n           \u2502\r\n           \u25bc\r\n    qdelay = max(delay_c, delay_l)\r\n         \u2502\r\n         \u25bc\r\n    \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\r\n    \u2502  calculate_probability()     \u2502   (every tupdate=16ms)\r\n    \u2502  delta = (qdelay - target)   \u2502\r\n    \u2502         \u00d7 alpha              \u2502\r\n    \u2502       + (qdelay - last_qdelay)\u2502\r\n    \u2502         \u00d7 beta               \u2502\r\n    \u2502  prob = prob + delta         \u2502\r\n    \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\r\n               \u2502\r\n         q->pi2.prob (0 to MAX_PROB = 0% to 100%)\r\n               \u2502\r\n       \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\r\n       \u25bc                       \u25bc\r\n   Classic queue            L4S queue\r\n   \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500            \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\r\n   TWO random rolls         ONE random roll\r\n   against prob             against (prob \u00d7 coupling_factor)\r\n                            \u2502\r\n   P(drop) = prob \u00d7 prob    P(mark) = prob \u00d7 coupling_factor\r\n           = prob\u00b2                  = prob \u00d7 2\r\n                            \u2502\r\n   e.g., prob=30%:          e.g., prob=30%:\r\n   drop = 30% \u00d7 30% = 9%    mark = 30% \u00d7 2 = 60%\r\n                            \u2502\r\n   If both rolls succeed:   If roll succeeds:\r\n   \u2192 DROP packet            \u2192 CE MARK packet\r\n   (non-ECT) or CE mark     (ECT(1) packet)\r\n   (ECT packet)\r\n</pre>",
               "createdAt": "2026-07-19T03:08:31Z",
-              "updatedAt": "2026-07-19T03:08:31Z"
+              "updatedAt": "2026-07-19T03:55:31Z"
             }
           ]
         },
@@ -606,6 +606,86 @@
               "body": "For Step threshold: \r\nIf configured <1ms: The threshold drops below the physical transmission time required to clear a single heavily aggregated line-rate frame chunk. The AQM will falsely trigger 100% ECN marking on perfectly normal, non-congested transient bursts, causing the L4S sender to back off prematurely and severely underutilize the radio link.\r\n\r\nIf configured >5ms: The step threshold loses its utility as an \"instantaneous burst protector.\" It will allow transient spikes to accumulate deep in the modem buffer, introducing unnecessary micro-latency spikes that degrade real-time application performance.",
               "createdAt": "2026-07-19T03:13:25Z",
               "updatedAt": "2026-07-19T03:13:25Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOS2kUfc8AAAABGes7bA",
+          "commit": {
+            "abbreviatedOid": "1f8e5f2"
+          },
+          "author": "Irlanki",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-07-19T03:33:55Z",
+          "updatedAt": "2026-07-19T03:33:55Z",
+          "comments": [
+            {
+              "originalPosition": 25,
+              "body": "For Target:\r\nIf configured < 15ms: The target is placed too low relative to normal mobile queuing fluctuations. As shown in the calculation block, because delta tracks how much the overall queue delay exceeds this target (qdelay - target), an overly aggressive target causes the slow-moving base probability loop (prob) to spike rapidly. Through the linear scaling on the right side of the diagram, this drives up the coupled marking probability (prob \u00d7 coupling_factor), causing persistent, premature CE marks into the L4S queue during normal operations and causing premature throughput reduction.\r\n \r\nIf configured > 50ms: The Classic queue will build up excessive buffer before the PI2 controller reacts. Because qdelay must grow significantly larger than the high target threshold to yield a positive delta, a bloated Classic queue standing persistently above 50ms will systematically drag down the overall responsiveness of the subsystem before the probability loop can scale up to command a back-off, breaking the latency isolation model. The L4S queue is partially protected by the step AQM (1ms threshold), but the classic queue suffers excessive buffering and delay.",
+              "createdAt": "2026-07-19T03:33:55Z",
+              "updatedAt": "2026-07-19T03:33:55Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOS2kUfc8AAAABGe3p6A",
+          "commit": {
+            "abbreviatedOid": "1f8e5f2"
+          },
+          "author": "Irlanki",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-07-19T04:21:32Z",
+          "updatedAt": "2026-07-19T04:21:32Z",
+          "comments": [
+            {
+              "originalPosition": 24,
+              "body": "These are not new normative statements intended to override or reinvent RFC 9332. Rather, they are specific operational constraints and recommended parameter ranges required to implement RFC 9332 correctly within the architectural constraints of a mobile subsystem (where we contend with massive frame aggregation and volatile radio drain rates).\r\n\r\nThe recommendation indeed addresses the bursty traffic note highlighted in Appendix A.1. As noted there, because sojourn time is calculated at dequeue, a sudden burst can spread the perceived delay across subsequent packets. In a mobile modem or Wi-Fi subsystem, hardware offloads like TSO or GRO routinely push heavily aggregated frames (up to 64kB) across the network interfaces. A single TSO/GRO aggregated burst looks massive on arrival. The recommended 1 ms to 5 ms step threshold is explicitly chosen to handle this specific dequeue 'spreading' phenomenon. It allows the Native L4S AQM component to instantly apply CE marks to the burst at dequeue before it can cause the slow-moving base probability loop (prob as shown in sequence of other comment) to spike rapidly, thereby avoiding premature throughput reduction and radio link underutilization.",
+              "createdAt": "2026-07-19T04:21:32Z",
+              "updatedAt": "2026-07-19T04:21:32Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOS2kUfc8AAAABGi5IVQ",
+          "commit": {
+            "abbreviatedOid": "1f8e5f2"
+          },
+          "author": "Kevsy",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-07-20T10:46:21Z",
+          "updatedAt": "2026-07-20T10:46:21Z",
+          "comments": [
+            {
+              "originalPosition": 16,
+              "body": "```suggestion\nThe link-layer uplink buffer within mobile subsystems (such as cellular modems and Wi-Fi drivers) operates as a dynamic bottleneck subject to rapid capacity fluctuations driven by radio grant scheduling, carrier aggregation shifts, and physical layer channel fading. To help achieve consistently low latency under these volatile conditions without inducing throughput degradation, implementations MUST deploy a Dual-Queue Coupled AQM framework adhering strictly to the functional design specifications of {{RFC9332}}.\n```",
+              "createdAt": "2026-07-20T10:46:21Z",
+              "updatedAt": "2026-07-20T10:46:21Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOS2kUfc8AAAABGi5Piw",
+          "commit": {
+            "abbreviatedOid": "1f8e5f2"
+          },
+          "author": "Kevsy",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-07-20T10:46:39Z",
+          "updatedAt": "2026-07-20T10:46:39Z",
+          "comments": [
+            {
+              "originalPosition": 16,
+              "body": "^ Suggest to replace 'To ensure' with 'To help achieve'. At some point the physical radio laws mean you can't ensure/guarantee transmission targets.",
+              "createdAt": "2026-07-20T10:46:39Z",
+              "updatedAt": "2026-07-20T10:46:39Z"
             }
           ]
         }
