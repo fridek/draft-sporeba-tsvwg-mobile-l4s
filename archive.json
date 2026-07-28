@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-07-21T03:17:54.017010+00:00",
+  "timestamp": "2026-07-28T02:53:31.277220+00:00",
   "repo": "fridek/draft-sporeba-tsvwg-mobile-l4s",
   "labels": [
     {
@@ -174,9 +174,17 @@
       "labels": [],
       "body": "[Ingemar points out](https://mailarchive.ietf.org/arch/msg/tsvwg/ayzffQ_WNefOc3kcvWeZ9qZXD7M/) the work on [draft-white-intarea-reordering](https://datatracker.ietf.org/doc/draft-white-intarea-reordering/) and that 4G spec requires in-order delivery while 5G spec makes it optional.\nWe want to make a normative statement on what's needed for optimal operation in a mobile device context\n",
       "createdAt": "2026-07-09T08:18:34Z",
-      "updatedAt": "2026-07-09T08:18:34Z",
+      "updatedAt": "2026-07-27T11:08:56Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "moeller0",
+          "authorAssociation": "NONE",
+          "body": "Quick note, there are quite some older TCP stacks deployed, so reordering tolerance in the wild might not be as large as hoped for. That said especially 5G UE might be closer to the modern end of the continuum and hence might have a higher probability of being sufficiently tolerant in this regard. That said re-ordering still is not great and e.g. in TCP data delivery is blocked until the re-ordered packet with the lowest sequence number arrives... so having numbers 2, 3, 4, 5, 6, 7, 8, 9, 1 arrive back to back is something recent (as of 2026) stacks deal with well,  2, 3, 4, 5, 6, 7, 8, 9, and then 1 100ms later is still bad... \nIMHO making link layers re-sort packets has the advantage of keeping them on their toes in that their performance now depends on that being rare, allowing any (unbounded) re-ordering might make link-layer developers simply not care deeply enough... That is, if you need to re-sort packets, you might be more inclined in avoiding re-ordering in the first place compared to not bothering about re-ordering at all. But that clearly has a cost as even re-ordering back2back 2, 3, 4, 5, 6, 7, 8, 9, 1 will be slower than not re-ordering (however the receiver will need to re-order anyway and if that delay dies not happen on path it happens at the receiver, so in a sense the receiver is equally affected by both options).\n",
+          "createdAt": "2026-07-27T11:08:56Z",
+          "updatedAt": "2026-07-27T11:08:56Z"
+        }
+      ]
     }
   ],
   "pulls": [
@@ -490,7 +498,7 @@
       "labels": [],
       "body": "",
       "createdAt": "2026-07-07T14:56:21Z",
-      "updatedAt": "2026-07-13T08:03:45Z",
+      "updatedAt": "2026-07-27T08:34:56Z",
       "baseRepository": "fridek/draft-sporeba-tsvwg-mobile-l4s",
       "baseRefName": "main",
       "baseRefOid": "675db6381bc66f3f9f4d702289dabeabb3c1b74f",
@@ -502,7 +510,34 @@
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOS2kUfc8AAAABHTb8Ww",
+          "commit": {
+            "abbreviatedOid": "f83e62f"
+          },
+          "author": "lcolitti",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-27T08:33:34Z",
+          "updatedAt": "2026-07-27T08:34:56Z",
+          "comments": [
+            {
+              "originalPosition": 14,
+              "body": "What about NQB traffic such as DNS lookups? Does that count as \"L4S traffic\"? The previous text covered this but the new text does not.",
+              "createdAt": "2026-07-27T08:33:34Z",
+              "updatedAt": "2026-07-27T08:34:56Z"
+            },
+            {
+              "originalPosition": 23,
+              "body": "\"may be critical\" -> \"are critical\"",
+              "createdAt": "2026-07-27T08:33:57Z",
+              "updatedAt": "2026-07-27T08:34:56Z"
+            }
+          ]
+        }
+      ]
     },
     {
       "number": 12,
