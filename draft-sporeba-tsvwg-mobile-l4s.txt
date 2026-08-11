@@ -5,9 +5,9 @@
 TSVWG Working Group                                            S. Poreba
 Internet-Draft                                                L. Colitti
 Intended status: Best Current Practice                        Google LLC
-Expires: 21 January 2027                                      S. Irlanki
+Expires: 12 February 2027                                     S. Irlanki
                                                              Samsung R&D
-                                                            20 July 2026
+                                                          11 August 2026
 
 
         Best Practices for L4S implementation for Mobile Devices
@@ -49,7 +49,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 21 January 2027.
+   This Internet-Draft will expire on 12 February 2027.
 
 Copyright Notice
 
@@ -94,17 +94,17 @@ Table of Contents
 1.  Introduction
 
    L4S (Low Latency, Low Loss, Scalable Throughput) [RFC9330] offers a
-   framework to significantly reduce queuing delay while maintaining
-   high throughput.  Mobile devices often have to react to quickly
-   changing connectivity conditions and may be subject to variable
-   throughput and connection quality.  This can cause large variations
-   in user-perceived latency and greater bufferbloat than in other
-   devices.  Deploying L4S in a mobile ecosystem requires co-operation
-   across multiple layers: the network stack, the host operating system
-   (OS), and link-layer drivers and firmware (e.g., Wi-Fi and cellular
-   modem), and the network.  This document outlines best current
-   practices for each of these subsystems to achieve reliable, low-
-   latency performance in the field.
+   framework to significantly reduce queuing delay and loss while
+   maintaining consistent throughput.  Mobile devices often have to
+   react to quickly changing connectivity conditions and may be subject
+   to variable throughput and connection quality.  This can cause large
+   variations in user-perceived latency and greater bufferbloat than in
+   other devices.  Deploying L4S in a mobile ecosystem requires co-
+   operation across multiple layers: the network stack, the host
+   operating system (OS), and link-layer drivers and firmware (e.g., Wi-
+   Fi and cellular modem), and the network.  This document outlines best
+   current practices for each of these subsystems to achieve reliable,
+   low-latency performance in the field.
 
 1.1.  Conventions and Definitions
 
@@ -136,13 +136,18 @@ Table of Contents
    packet basis. and MUST allow setting the ECN codepoints either on a
    per-socket or per-packet basis.  The detailed explanation of
    configuring UDP sockets for ECN for common platforms is covered in
-   [I-D.ietf-tsvwg-udp-ecn].
+   [I-D.ietf-tsvwg-udp-ecn].  It should be noted that on some platforms
+   setting ECN codepoints shares calls with DSCP codepoints, and
+   applications might need to take steps to avoid overriding commands.
 
    UDP-based transport stacks SHOULD mark L4S-capable traffic as ECT(1)
-   and MUST NOT mark queue-building traffic (e.g., traffic using legacy
-   congestion controls) as ECT(1).  Link layers MUST respond to
-   misbehaving stack as discussed in {#defense-against-misbehaving-
-   traffic}.
+   and MUST NOT mark non-L4S traffic as ECT(1).  Other NQB traffic
+   marked with DSCP 45 codepoint as per [RFC9956], Section 3.3.  Such
+   traffic is considered compatible with L4S and can share the low-
+   latency queue, but should be marked with ECT(1) only to signify the
+   responsiveness to ECN markings (i.e. Prague L4S requirements
+   [RFC9331].  Link layers MUST respond to misbehaving stack as
+   discussed in {#defense-against-misbehaving-traffic}.
 
 2.2.  TCP support detection and bootstrapping
 
@@ -161,13 +166,13 @@ Table of Contents
    replying with Not-ECT is does not require any additional retries and
    is not considered a failure.
 
-   Latency is critical to mobile applications, and retry strategies
-   dependent on retransmissions and timeouts can lead to a degraded user
-   experience.  To ensure that L4S can be safely enabled without
-   degrading the user experience in the presence of networks or servers
-   that drop ECN negotiations or Accurate ECN TCP options, the client
-   SHOULD balance implementing the retry strategies in section 3 of
-   [RFC9768] with mechanisms to reduce the latency impact of
+   Latency and loss are critical to mobile applications, and retry
+   strategies dependent on retransmissions and timeouts can lead to a
+   degraded user experience.  To ensure that L4S can be safely enabled
+   without degrading the user experience in the presence of networks or
+   servers that drop ECN negotiations or Accurate ECN TCP options, the
+   client SHOULD balance implementing the retry strategies in section 3
+   of [RFC9768] with mechanisms to reduce the latency impact of
    retransmissions.  A possible strategy is to only attempt ECN
    negotiation on the first SYN to a new server.  Additionally, the host
    MAY cache ECN negotiation timeouts on a per-host or per-IP-address,
@@ -215,14 +220,15 @@ Table of Contents
    low-latency goals of L4S.  Also, by artificially introducing delays
    that were not imposed by the network, it reduces the accuracy of
    protocol rate estimation.  The additional delays do not benefit
-   contemporary protocol stacks, which are generally well-equipped to
-   handle out-of-order packets.
-
-   L4S-aware protocol stacks MUST be prepared to receive out-of-order
-   packets.
+   protocol stacks which are equipped to handle out-of-order packets.
 
    Link-layers MUST NOT buffer inbound L4S packets in a way that imposes
    measurable latency to the protocol stack.
+
+   [RFC9331] §4.3 specifies that loss detection SHOULD be resilient to
+   packet reordering.  However, to enable the requirement on the
+   cellular modem behaviour described above, L4S-aware protocol stacks
+   on mobile devices MUST be prepared to receive out-of-order packets.
 
 3.2.  Multi-Queue Scheduling and Bounded Latency Queueing
 
@@ -244,11 +250,11 @@ Table of Contents
    *  *Low-Priority Queue:* For queue-building traffic (e.g., CUBIC/
       Reno) and bulk data.
 
-   Link layers SHOULD ensure that the L4S queue does not starve the
-   other queues if offered L4S traffic is higher than available
-   bandwidth.  Such prioritisation SHOULD use a scheduling algorithm
-   (e.g., Weighted Fair Queueing) and aim to minimize the queue buildup
-   in the Low-Latency queue.
+   Link layers MUST ensure that the L4S queue does not starve the other
+   queues if offered L4S traffic is higher than available bandwidth.
+   Such prioritisation SHOULD use a scheduling algorithm (e.g., Weighted
+   Fair Queueing) and aim to minimize the queue buildup in the Low-
+   Latency queue.
 
 3.3.  Packet Classification
 
@@ -301,7 +307,7 @@ Table of Contents
    *  The link-layer SHOULD monitor queue build-up and latency
       contributions of individual flows within the L4S queue.
 
-   *  If a flow is detected to be queue-building (e.g. contributing to
+   *  If a flow is detected to be non-responsive (e.g. contributing to
       sustained queue latency above the marking threshold without
       responding to CE marks), the link-layer SHOULD demote the flow and
       redirect its packets to a different queue.
@@ -349,15 +355,16 @@ Table of Contents
    those markings in line with the transport-specific requirements
    specified in Section 4.2 of [RFC9331].
 
-   Network deployments MUST NOT be marketed or operated as supporting
-   L4S if they prioritize traffic via alternative heuristics (such as
-   bandwidth allocation multipliers).  The risk of such alternative
-   mechanisms is incentivising marking ECT(1) codepoints in flows to be
-   allocated into prioritised queues, without implementing full L4S
-   congestion control as described in {#defense-against-misbehaving-
-   traffic}. The convergence point of such behaviour would be a
-   prevalence of ECT(1) marked traffic that does not respond to CE
-   markings and congestion in the incorrectly prioritised queues.
+   Network deployments that don't support low-latency queues, and
+   instead prioritise ECN marked traffic based on alternative heuristics
+   (such as bandwidth allocation multipliers) are not an L4S deployment.
+   The risk of such alternative mechanisms is incentivising marking
+   ECT(1) codepoints in flows to be allocated into prioritised queues,
+   without implementing full L4S congestion control as described in
+   {#defense-against-misbehaving-traffic}. The convergence point of such
+   behaviour would be a prevalence of ECT(1) marked traffic that does
+   not respond to CE markings and congestion in the incorrectly
+   prioritised queues.
 
 5.  Security Considerations
 
