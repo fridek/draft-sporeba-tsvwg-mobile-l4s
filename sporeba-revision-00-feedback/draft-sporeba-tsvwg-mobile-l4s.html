@@ -28,7 +28,7 @@
     Jinja2 3.1.6
     lxml 6.1.1
     natsort 8.4.0
-    platformdirs 4.10.0
+    platformdirs 4.11.0
     pycountry 24.6.1
     PyYAML 6.0.3
     requests 2.33.1
@@ -68,7 +68,6 @@
   src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-latin-ext.woff2') format('woff2');
   unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
-
 @font-face {
   font-family: 'Lora';
   font-style: italic;
@@ -117,7 +116,6 @@
   src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
-
 @font-face {
   font-family: 'Lora';
   font-style: normal;
@@ -182,7 +180,6 @@
   font-display: swap;
   src: local('Oxygen Mono'), local('OxygenMono-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/oxygenmono-regular-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
 }
 
 @font-face {
@@ -1051,11 +1048,11 @@ svg {
 <thead><tr>
 <td class="left">Internet-Draft</td>
 <td class="center">Mobile L4S</td>
-<td class="right">July 2026</td>
+<td class="right">August 2026</td>
 </tr></thead>
 <tfoot><tr>
 <td class="left">Poreba, et al.</td>
-<td class="center">Expires 8 January 2027</td>
+<td class="center">Expires 12 February 2027</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1068,12 +1065,12 @@ svg {
 <dd class="internet-draft">draft-sporeba-tsvwg-mobile-l4s-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-07-07" class="published">7 July 2026</time>
+<time datetime="2026-08-11" class="published">11 August 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Best Current Practice</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2027-01-08">8 January 2027</time></dd>
+<dd class="expires"><time datetime="2027-02-12">12 February 2027</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1126,7 +1123,7 @@ svg {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 8 January 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 12 February 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1279,8 +1276,8 @@ appear in all capitals, as shown here.<a href="#section-1.1-1" class="pilcrow">�
             <p id="section-2.1-2.2.1">Read the ECN codepoints of incoming packets.<a href="#section-2.1-2.2.1" class="pilcrow">¶</a></p>
 </li>
         </ol>
-<p id="section-2.1-3">These capabilities <span class="bcp14">MUST</span> be exposed via standard socket APIs (e.g., <code>IP_TOS</code> and <code>IPV6_TCLASS</code> for setting, and <code>IP_RECVTOS</code> and <code>IPV6_RECVTCLASS</code> via ancillary data for reading) and <span class="bcp14">MUST NOT</span> be restricted by default security policies for standard application sockets. The APIs <span class="bcp14">MUST</span> allow reading the ECN codepoints on a per-packet basis. and <span class="bcp14">MUST</span> allow setting the ECN codepoints either on a per-socket or per-packet basis. The detailed explanation of configuring UDP sockets for ECN for common platforms is covered in <span>[<a href="#I-D.ietf-tsvwg-udp-ecn" class="cite xref">I-D.ietf-tsvwg-udp-ecn</a>]</span>.<a href="#section-2.1-3" class="pilcrow">¶</a></p>
-<p id="section-2.1-4">UDP-based transport stacks <span class="bcp14">SHOULD</span> mark L4S-capable traffic as ECT(1) and <span class="bcp14">MUST NOT</span> mark non-L4S traffic as ECT(1). Link layers <span class="bcp14">MUST</span> respond to misbehaving stack as discussed in {#defense-against-misbehaving-traffic}.<a href="#section-2.1-4" class="pilcrow">¶</a></p>
+<p id="section-2.1-3">These capabilities <span class="bcp14">MUST</span> be exposed via standard socket APIs (e.g., <code>IP_TOS</code> and <code>IPV6_TCLASS</code> for setting, and <code>IP_RECVTOS</code> and <code>IPV6_RECVTCLASS</code> via ancillary data for reading) and <span class="bcp14">MUST NOT</span> be restricted by default security policies for standard application sockets. The APIs <span class="bcp14">MUST</span> allow reading the ECN codepoints on a per-packet basis. and <span class="bcp14">MUST</span> allow setting the ECN codepoints either on a per-socket or per-packet basis. The detailed explanation of configuring UDP sockets for ECN for common platforms is covered in <span>[<a href="#I-D.ietf-tsvwg-udp-ecn" class="cite xref">I-D.ietf-tsvwg-udp-ecn</a>]</span>. It should be noted that on some platforms setting ECN codepoints shares calls with DSCP codepoints, and applications might need to take steps to avoid overriding commands.<a href="#section-2.1-3" class="pilcrow">¶</a></p>
+<p id="section-2.1-4">UDP-based transport stacks <span class="bcp14">SHOULD</span> mark L4S-capable traffic as ECT(1) and <span class="bcp14">MUST NOT</span> mark non-L4S traffic as ECT(1). Other NQB traffic marked with DSCP 45 codepoint as per <span>[<a href="#RFC9956" class="cite xref">RFC9956</a>], <a href="https://rfc-editor.org/rfc/rfc9956#section-3.3" class="relref">Section 3.3</a></span>. Such traffic is considered compatible with L4S and can share the low-latency queue, but should be marked with ECT(1) only to signify the responsiveness to ECN markings (i.e. Prague L4S requirements <span>[<a href="#RFC9331" class="cite xref">RFC9331</a>]</span>. Link layers <span class="bcp14">MUST</span> respond to misbehaving stack as discussed in {#defense-against-misbehaving-traffic}.<a href="#section-2.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="tcp-support-detection-and-bootstrapping">
@@ -1295,7 +1292,7 @@ appear in all capitals, as shown here.<a href="#section-1.1-1" class="pilcrow">�
 <a href="#section-2.2.1" class="section-number selfRef">2.2.1. </a><a href="#name-per-network-detection-and-l" class="section-name selfRef">Per-network detection and latency mitigation</a>
           </h4>
 <p id="section-2.2.1-1">If misconfigured networks or servers drop ECN negotiation packets, and the client does not retry without ECN negotiation, TCP connections will fail. Therefore, clients <span class="bcp14">MUST</span> implement retry strategies that disable ECN negotiation, as described in Section 3.1.4 and Section 3.2.3.2.2 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>. Note that a server replying with Not-ECT is does not require any additional retries and is not considered a failure.<a href="#section-2.2.1-1" class="pilcrow">¶</a></p>
-<p id="section-2.2.1-2">Latency and loss may be critical to mobile applications, and retry strategies dependent on retransmissions and timeouts can lead to a degraded user experience. To ensure that L4S can be safely enabled without degrading the user experience in the presence of networks or servers that drop ECN negotiations or Accurate ECN TCP options, the client <span class="bcp14">SHOULD</span> balance implementing the retry strategies in section 3 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span> with mechanisms to reduce the latency impact of retransmissions. A possible strategy is to only attempt ECN negotiation on the first SYN to a new server. Additionally, the host <span class="bcp14">MAY</span> cache ECN negotiation timeouts on a per-host or per-IP-address, or other basis.<a href="#section-2.2.1-2" class="pilcrow">¶</a></p>
+<p id="section-2.2.1-2">Latency and loss are critical to mobile applications, and retry strategies dependent on retransmissions and timeouts can lead to a degraded user experience. To ensure that L4S can be safely enabled without degrading the user experience in the presence of networks or servers that drop ECN negotiations or Accurate ECN TCP options, the client <span class="bcp14">SHOULD</span> balance implementing the retry strategies in section 3 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span> with mechanisms to reduce the latency impact of retransmissions. A possible strategy is to only attempt ECN negotiation on the first SYN to a new server. Additionally, the host <span class="bcp14">MAY</span> cache ECN negotiation timeouts on a per-host or per-IP-address, or other basis.<a href="#section-2.2.1-2" class="pilcrow">¶</a></p>
 <p id="section-2.2.1-3">If a host is in a network that blocks all ECN negotiation regardless of destination, all TCP connections will suffer latency impact. This will degrade the user experience even if failures are cached, because any connection to a server that is not in the cache will suffer an additional round trip delay.<a href="#section-2.2.1-3" class="pilcrow">¶</a></p>
 <p id="section-2.2.1-4">A host system that wants to be resilient to this <span class="bcp14">MAY</span> attempt a connectivity check to a known, L4S-supporting service. In case of check failure, the result can be used to turn off L4S negotiation attempts for a given network, represented by PLMN/APN (in carrier networks) or SSID/BSSID (in Wi-Fi networks).<a href="#section-2.2.1-4" class="pilcrow">¶</a></p>
 <p id="section-2.2.1-5">When maintaining such lists, entries <span class="bcp14">SHOULD</span> be retired after a reasonable TTL (e.g. 7 days), and <span class="bcp14">SHOULD</span> prefer information from more frequently used destinations.<a href="#section-2.2.1-5" class="pilcrow">¶</a></p>

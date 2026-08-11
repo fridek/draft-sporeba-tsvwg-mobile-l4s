@@ -5,9 +5,9 @@
 TSVWG Working Group                                            S. Poreba
 Internet-Draft                                                L. Colitti
 Intended status: Best Current Practice                        Google LLC
-Expires: 8 January 2027                                       S. Irlanki
+Expires: 12 February 2027                                     S. Irlanki
                                                              Samsung R&D
-                                                             7 July 2026
+                                                          11 August 2026
 
 
         Best Practices for L4S implementation for Mobile Devices
@@ -49,7 +49,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 8 January 2027.
+   This Internet-Draft will expire on 12 February 2027.
 
 Copyright Notice
 
@@ -136,12 +136,18 @@ Table of Contents
    packet basis. and MUST allow setting the ECN codepoints either on a
    per-socket or per-packet basis.  The detailed explanation of
    configuring UDP sockets for ECN for common platforms is covered in
-   [I-D.ietf-tsvwg-udp-ecn].
+   [I-D.ietf-tsvwg-udp-ecn].  It should be noted that on some platforms
+   setting ECN codepoints shares calls with DSCP codepoints, and
+   applications might need to take steps to avoid overriding commands.
 
    UDP-based transport stacks SHOULD mark L4S-capable traffic as ECT(1)
-   and MUST NOT mark non-L4S traffic as ECT(1).  Link layers MUST
-   respond to misbehaving stack as discussed in {#defense-against-
-   misbehaving-traffic}.
+   and MUST NOT mark non-L4S traffic as ECT(1).  Other NQB traffic
+   marked with DSCP 45 codepoint as per [RFC9956], Section 3.3.  Such
+   traffic is considered compatible with L4S and can share the low-
+   latency queue, but should be marked with ECT(1) only to signify the
+   responsiveness to ECN markings (i.e. Prague L4S requirements
+   [RFC9331].  Link layers MUST respond to misbehaving stack as
+   discussed in {#defense-against-misbehaving-traffic}.
 
 2.2.  TCP support detection and bootstrapping
 
@@ -160,7 +166,7 @@ Table of Contents
    replying with Not-ECT is does not require any additional retries and
    is not considered a failure.
 
-   Latency and loss may be critical to mobile applications, and retry
+   Latency and loss are critical to mobile applications, and retry
    strategies dependent on retransmissions and timeouts can lead to a
    degraded user experience.  To ensure that L4S can be safely enabled
    without degrading the user experience in the presence of networks or
