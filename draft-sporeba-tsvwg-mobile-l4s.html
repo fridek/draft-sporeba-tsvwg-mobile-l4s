@@ -1362,13 +1362,22 @@ Some link-layer systems already support high-priority and low-priority queues. T
         <h3 id="name-uplink-active-queue-managem">
 <a href="#section-3.4" class="section-number selfRef">3.4. </a><a href="#name-uplink-active-queue-managem" class="section-name selfRef">Uplink Active Queue Management (AQM)</a>
         </h3>
-<p id="section-3.4-1">The link-layer uplink buffer is often a bottleneck due to cellular grant scheduling. When the uplink queue builds up, the link-layer <span class="bcp14">MUST</span> perform ECN marking:<a href="#section-3.4-1" class="pilcrow">¶</a></p>
+<p id="section-3.4-1">The link-layer uplink buffer within mobile subsystems (such as cellular modems and Wi-Fi drivers) operates as a dynamic bottleneck subject to rapid capacity fluctuations driven by radio grant scheduling, carrier aggregation shifts, and physical layer channel fading. To help achieve consistently low latency under these volatile conditions without inducing throughput degradation, implementations <span class="bcp14">MUST</span> deploy a Dual-Queue Coupled AQM framework adhering strictly to the functional design specifications of <span>[<a href="#RFC9332" class="cite xref">RFC9332</a>]</span>.<a href="#section-3.4-1" class="pilcrow">¶</a></p>
+<p id="section-3.4-2">To optimize performance within the specific constraints of mobile device link-layer environments, the underlying AQM parameters <span class="bcp14">MUST</span> be configured as follows:<a href="#section-3.4-2" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-3.4-2.1">
-            <p id="section-3.4-2.1.1">If the sojourn time of a packet in the L4S queue exceeds a shallow threshold (e.g., 1 ms to 5 ms), the link-layer <span class="bcp14">MUST</span> mark the packet as <code>CE</code> in the IP header before transmitting it, rather than dropping it.<a href="#section-3.4-2.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-3.4-3.1">
+            <p id="section-3.4-3.1.1"><strong>Bandwidth-Independent Metrics:</strong> In alignment with <span>[<a href="#RFC9332" class="cite xref">RFC9332</a>]</span> Section 2.4, all internal marking states, delay targets, and queue boundaries <span class="bcp14">MUST</span> be calculated using packet sojourn time (expected time-to-service) rather than raw bytes or static packet counts. Expressing operational boundaries in units of time ensures that parameters remain invariant across fluctuating physical radio drain rates. Furthermore, this approach naturally accommodates large aggregated frame structures (e.g., up to 64kB aggregated packets passed via USB network interfaces or virtual overlay drivers) without triggering premature congestion signals.<a href="#section-3.4-3.1.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-3.4-2.2">
-            <p id="section-3.4-2.2.1">Packets <span class="bcp14">MUST</span> only be dropped if the queue reaches the maximum designated size.<a href="#section-3.4-2.2.1" class="pilcrow">¶</a></p>
+          <li class="normal" id="section-3.4-3.2">
+            <p id="section-3.4-3.2.1"><strong>Two-Tier Congestion Signaling:</strong> The link-layer AQM implementation <span class="bcp14">SHOULD</span> implement the structural coupling via a dual-tiered time threshold layout to separate transient bursts from sustained overload:<a href="#section-3.4-3.2.1" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-3.4-3.2.2">
+<li id="section-3.4-3.2.2.1">
+                <p id="section-3.4-3.2.2.1.1"><strong>Instantaneous Burst Protection:</strong> To mitigate rapid latency spikes caused by sudden frame bursts or brief radio grant allocation delays, the Native L4S AQM component <span class="bcp14">SHOULD</span> utilize an instantaneous step threshold configured strictly between 1 ms and 5 ms.<a href="#section-3.4-3.2.2.1.1" class="pilcrow">¶</a></p>
+</li>
+              <li id="section-3.4-3.2.2.2">
+                <p id="section-3.4-3.2.2.2.1"><strong>Sustained Congestion Tracking:</strong> The coupled Base AQM component <span class="bcp14">SHOULD</span> track long-term link stability against a broader target delay window configured between 15 ms and 50 ms, ensuring smooth end-to-end transport adaptation under sustained link load.<a href="#section-3.4-3.2.2.2.1" class="pilcrow">¶</a></p>
+</li>
+            </ol>
 </li>
         </ul>
 </section>
@@ -1378,16 +1387,17 @@ Some link-layer systems already support high-priority and low-priority queues. T
         <h3 id="name-defense-against-misbehaving">
 <a href="#section-3.5" class="section-number selfRef">3.5. </a><a href="#name-defense-against-misbehaving" class="section-name selfRef">Defense Against Misbehaving Traffic (Queue Protection)</a>
         </h3>
-<p id="section-3.5-1">Applications may mark their traffic as NQB or <code>ECT(1)</code> without implementing L4S congestion control, causing queue build-up in the low-latency queue.<a href="#section-3.5-1" class="pilcrow">¶</a></p>
+<p id="section-3.5-1">Applications may incorrectly or maliciously mark non-responsive traffic as NQB or <code>ECT(1)</code> without implementing a scalable, responsive L4S congestion control algorithm. Because a standard dual-queue coupled framework lacks per-flow processing, a single non-responsive L4S stream will inflate the coupled congestion metrics, driving up CE marking across the entire Low-Latency queue and increasing drops on the Classic queue side, unfairly penalizing well-behaved applications.<a href="#section-3.5-1" class="pilcrow">¶</a></p>
+<p id="section-3.5-2">To defend the Low-Latency queue while remaining fully compliant with the normative boundaries of <span>[<a href="#RFC9332" class="cite xref">RFC9332</a>]</span>, mobile link-layer subsystems <span class="bcp14">MUST</span> enforce the following safeguards:<a href="#section-3.5-2" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-3.5-2.1">
-            <p id="section-3.5-2.1.1">The link-layer <span class="bcp14">MUST</span> enforce a strict size limit on the Low-Latency Queue. If the queue is full, incoming packets <span class="bcp14">MUST</span> be dropped.<a href="#section-3.5-2.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-3.5-3.1">
+            <p id="section-3.5-3.1.1"><strong>Layered Congestion and Drop Progression:</strong> Under standard operating conditions, congestion signaling for ECN-capable packets within the Low-Latency queue <span class="bcp14">MUST</span> rely entirely on CE marking. In accordance with the overload mandates of <span>[<a href="#RFC9332" class="cite xref">RFC9332</a>]</span> Sections 2.5.1.1 and 4.2.3, if sustained saturation is detected (i.e., marking capacity is exhausted at 100% ECN signaling or the queue delay persistently exceeds operational bounds), the link-layer <span class="bcp14">MUST</span> introduce classic packet drops to both types of traffic to defend link integrity. Implementations <span class="bcp14">SHOULD</span> follow a strict architectural fallback progression: PI2 Gradual Marking -&gt; Step AQM Burst Marking -&gt; Overload Drops -&gt; Tail-Drop.<a href="#section-3.5-3.1.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-3.5-2.2">
-            <p id="section-3.5-2.2.1">The link-layer <span class="bcp14">SHOULD</span> monitor queue build-up and latency contributions of individual flows within the L4S queue.<a href="#section-3.5-2.2.1" class="pilcrow">¶</a></p>
+          <li class="normal" id="section-3.5-3.2">
+            <p id="section-3.5-3.2.1"><strong>Buffer Limit Metrics:</strong> The link-layer <span class="bcp14">MUST</span> enforce a strict ceiling on the maximum physical capacity of the Low-Latency queue. To prevent premature packet drops when handling heavily aggregated payloads, this absolute limit <span class="bcp14">SHOULD</span> be defined in terms of packet count (with a recommended default limit of 10,000 packets) rather than raw bytes, operating strictly as a final tail-drop mechanism at physical hardware capacity exhaustion.<a href="#section-3.5-3.2.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-3.5-2.3">
-            <p id="section-3.5-2.3.1">If a flow is detected to be non-responsive (e.g. contributing to sustained queue latency above the marking threshold without responding to CE marks), the link-layer <span class="bcp14">SHOULD</span> demote the flow and redirect its packets to a different queue.<a href="#section-3.5-2.3.1" class="pilcrow">¶</a></p>
+          <li class="normal" id="section-3.5-3.3">
+            <p id="section-3.5-3.3.1"><strong>Flow Isolation Architecture:</strong> As noted in <span>[<a href="#RFC9332" class="cite xref">RFC9332</a>]</span> Section 4.2.2, scheduling weights alone cannot resolve long-term overload across a shared buffer. For mobile device environments requiring robust traffic defense against rogue applications, the link-layer <span class="bcp14">MAY</span> layer a per-flow queueing discipline or flow-fairness mechanism underneath the macro coupled dual-queue architecture. This design architecture isolates non-responsive streams into distinct internal queueing slots, shielding well-behaved applications from the coupled penalty while fully preserving the macro coupled framework requirements.<a href="#section-3.5-3.3.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
 </section>
@@ -1486,6 +1496,10 @@ Some link-layer systems already support high-priority and low-priority queues. T
 <dt id="RFC9331">[RFC9331]</dt>
         <dd>
 <span class="refAuthor">De Schepper, K.</span> and <span class="refAuthor">B. Briscoe, Ed.</span>, <span class="refTitle">"The Explicit Congestion Notification (ECN) Protocol for Low Latency, Low Loss, and Scalable Throughput (L4S)"</span>, <span class="seriesInfo">RFC 9331</span>, <span class="seriesInfo">DOI 10.17487/RFC9331</span>, <time datetime="2023-01" class="refDate">January 2023</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9331">https://www.rfc-editor.org/rfc/rfc9331</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9332">[RFC9332]</dt>
+        <dd>
+<span class="refAuthor">De Schepper, K.</span>, <span class="refAuthor">Briscoe, B., Ed.</span>, and <span class="refAuthor">G. White</span>, <span class="refTitle">"Dual-Queue Coupled Active Queue Management (AQM) for Low Latency, Low Loss, and Scalable Throughput (L4S)"</span>, <span class="seriesInfo">RFC 9332</span>, <span class="seriesInfo">DOI 10.17487/RFC9332</span>, <time datetime="2023-01" class="refDate">January 2023</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9332">https://www.rfc-editor.org/rfc/rfc9332</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC9768">[RFC9768]</dt>
         <dd>
