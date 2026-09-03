@@ -22,3 +22,5 @@ report.xml
 /versioned/
 /.vscode/
 !requirements.txt
+.obsidian
+
