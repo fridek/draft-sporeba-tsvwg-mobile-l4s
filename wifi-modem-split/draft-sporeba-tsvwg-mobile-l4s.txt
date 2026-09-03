@@ -351,47 +351,37 @@ Table of Contents
 3.4.2.  Cellular subsystem sojourn time recommendations
 
    Unlike the contention-based channel access of Wi-Fi, cellular
-   networks (LTE and 5G NR) utilize centralized, grant-based uplink
-   scheduling managed by the base station.
+   networks utilize centralized, grant-based uplink scheduling managed
+   by the base station.
 
-   During continuous, sustained transmissions (such as L4S flows), the
-   base station continuously issues uplink grants via Downlink Control
-   Information (DCI) based on Buffer Status Reports (BSR) piggybacked
-   into existing transmissions.  In this steady state, the service
-   quantum is bounded primarily by the radio slot duration (0.5 ms in 5G
-   NR with 30 kHz subcarrier spacing or 1 ms in LTE).  Because
-   transmission is continuous and unencumbered by MAC contention
-   backoff, cellular subsystems can sustain low queuing delays.  For
-   sustained transmissions, cellular modem implementations SHOULD
-   configure the L4S sojourn time step threshold of 2 ms to 4 ms for 5G
-   NR (and 4 ms to 6 ms for LTE).
+   During sustained transmission, the base station allocates uplink
+   resources based on buffer status reports in ongoing traffic.  Without
+   contention backoff, the queue drains on each radio scheduling
+   interval.  Cellular modem implementations SHOULD configure the native
+   L4S sojourn time step threshold based on the radio scheduling
+   interval and physical-layer retransmission turnaround.  For example,
+   a threshold of 2 ms is appropriate for 5G networks [TS38.211],
+   whereas 4 ms is appropriate for 4G networks [TS36.211].
 
-   However, when a flow transitions from an idle queue to an active
-   state, the modem must initiate a Scheduling Request (SR) on the
-   physical uplink control channel (PUCCH) to acquire its initial grant.
-   Even for a device already in RRC_CONNECTED mode with valid uplink
-   synchronization, this initial SR-to-grant handshake incurs a
-   turnaround delay of approximately 3 ms to 6 ms in 5G NR (and up to 8
-   ms to 10 ms in LTE).  To prevent this initial grant acquisition
-   latency from triggering spurious CE marks on the first packet of a
-   connection, implementations SHOULD apply an initial burst tolerance
-   (e.g., 6 ms to 8 ms) to suppress marking on the initial grant spin-up
-   (analogous to the burst protection mechanisms referenced in [RFC9332]
-   Appendix A.2) or configure a static threshold between 4 ms and 5 ms.
-   Where supported by the network (such as in 5G URLLC deployments),
-   low-latency flows MAY utilize Configured Grants (CG) or Semi-
-   Persistent Scheduling (SPS), which pre-allocate uplink transmission
-   opportunities and eliminate the initial SR delay entirely.
+   When a flow transitions from an idle buffer to an active state, the
+   device must first request uplink transmission resources from the
+   network.  This initial scheduling turnaround can introduce a delay of
+   approximately 3 ms to 6 ms.  To prevent this initial delay from
+   triggering spurious CE marks on the first packet of a burst or
+   connection, implementations SHOULD apply an initial burst tolerance.
 
-   Furthermore, cellular link layers SHOULD minimize link-layer
-   reordering delays on the air interface.  Where supported by network
-   configuration, low-latency DRBs carrying L4S traffic SHOULD utilize
-   RLC Unacknowledged Mode (UM) or configure the Packet Data Convergence
-   Protocol (PDCP) layer for out-of-order delivery (e.g., disabling in-
-   order delivery timers per 3GPP TS 38.323).  This ensures that
-   physical layer transmission losses recovered by transport-layer
-   congestion control do not trigger prolonged link-layer head-of-line
-   blocking stalls within the modem.
+   Where the cellular network provides pre-allocated uplink transmission
+   resources (such as semi-persistent scheduling or configured grants),
+   the initial scheduling turnaround is eliminated, allowing
+   implementations to use the lower steady-state threshold directly.
+
+   Additionally, cellular link layers SHOULD minimize reordering delays
+   on the radio interface.  Where configurable, data bearers carrying
+   L4S traffic SHOULD avoid link-layer in-order delivery enforcement
+   (for example, utilizing unacknowledged mode or enabling link-layer
+   out-of-order delivery).  This ensures that physical layer
+   retransmissions do not cause head-of-line blocking stalls in the
+   modem buffer.
 
 3.5.  Defense Against Misbehaving Traffic (Queue Protection)
 
@@ -584,6 +574,13 @@ Table of Contents
    [RFC8325]  Szigeti, T., Henry, J., and F. Baker, "Mapping Diffserv to
               IEEE 802.11", RFC 8325, DOI 10.17487/RFC8325, February
               2018, <https://www.rfc-editor.org/rfc/rfc8325>.
+
+   [TS36.211] 3GPP, "Evolved Universal Terrestrial Radio Access
+              (E-UTRA); Physical channels and modulation", 3GPP TS
+              36.211, n.d., <https://www.3gpp.org/dynareport/36211.htm>.
+
+   [TS38.211] 3GPP, "NR; Physical channels and modulation", 3GPP TS
+              38.211, n.d., <https://www.3gpp.org/dynareport/38211.htm>.
 
 Authors' Addresses
 
