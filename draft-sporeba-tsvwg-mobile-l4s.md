@@ -164,15 +164,11 @@ In alignment with {{RFC9332}} Section 2.4, all internal marking states, delay ta
 
 ### Wi-Fi subsystem sojourn time recommendations
 
-In a shared wireless medium such as Wi-Fi, transmission requires contention-based spectrum acquisition and relies on frame aggregation to achieve channel efficiency. Often a buffer once scheduled for transmission cannot be expanded, resulting in traffic bursts and a potential delay for subsequent packets. To prevent erroneously signaling congestion during normal frame aggregation and transmission bursts, Wi-Fi implementations SHOULD configure the sojourn time step threshold to longer than the maximum burst time. For example, in Wi-Fi 7 (802.11be) Access Category Best Effort (AC_BE), the maximum A-MPDU transmission is 4 MB, transmitted over a maximum airtime of approx. 5.5 ms. Therefore a reasonable sojourn time threshold to use would be 6 ms.
+In a shared wireless medium such as Wi-Fi, transmission requires contention-based spectrum acquisition and relies on frame aggregation to achieve channel efficiency. Often a buffer once scheduled for transmission cannot be expanded, resulting in traffic bursts and a potential delay for subsequent packets.  
 
-Wi-Fi subsystems SHOULD utilize MAC-layer QoS mechanisms to prioritize L4S traffic and reduce channel access delay. Default access categories (such as AC_BE) might experience a worst-case channel access wait exceeding the sojourn time defined by burst traffic protection.
+In low-congestion networks channel access is not a bottleneck. Therefore L4S will work as designed. To prevent erroneously signaling congestion during normal frame aggregation and transmission bursts, Wi-Fi implementations SHOULD configure the sojourn time step threshold to longer than the maximum burst time. For example, in Wi-Fi 7 (802.11be) the maximum A-MPDU transmission is 4 MB, transmitted over a maximum airtime of approx. 5.5 ms. Therefore a reasonable sojourn time threshold to use would be 6 ms.
 
-For example, for Wi-Fi 7 (802.11be) AC_BE the maximum uninterrupted backoff countdown is approx. 9.2 ms ({{IEEE-802.11-2024}} Table 9-194). For Access Category Video (AC_VI) this time is only 0.135 ms. The standard also caps the transmission opportunity time (TXOPLimit) for AC_VI to typically 3 ms.
-
-While it might sound attractive to raise the sojourn time threshold of AC_BE traffic to accommodate the total channel access delay experienced under heavy contention (for example to 30 ms), doing so would cause L4S congestion controls to maintain an unnecessarily large buffer, comparable with other non-ECN-responsive congestion controls.
-
-Therefore, Wi-Fi subsystems SHOULD assign ECT(1) marked traffic to an Access Category more appropriate for low-latency traffic (such as Video - AC_VI). This is analogous to the DSCP-to-UP mapping described in {{RFC8325, Section 4.2}}. In these cases, the sojourn time might no longer be limited by A-MPDU, and implementations SHOULD use a lower sojourn time threshold derived from TXOPLimit (for example, a value of 4 ms for AC_VI).
+When the latency is dominated by the channel aquisition time, CE marking might be counterproductive because it would signal congestion that can't be resolved by the client backing off. In these cases WiFi firmware SHOULD NOT mark congestion.
 
 In standards that support multi-TID frame aggregation (such as IEEE 802.11be), different access categories can be mixed into a single A-MPDU aggregate. In these scenarios the link-layer subsystem SHOULD NOT bundle latency-sensitive L4S frames with traffic using longer transmission windows.
 
@@ -182,9 +178,11 @@ Unlike the contention-based channel access of Wi-Fi, cellular networks utilize c
 
 During sustained transmission, the base station allocates uplink resources based on buffer status reports in ongoing traffic. Without contention backoff, the queue drains on each radio scheduling interval. Cellular modem implementations SHOULD configure the native L4S sojourn time step threshold based on the radio scheduling interval and physical-layer retransmission turnaround. For example, a threshold of 2 ms is appropriate for 5G networks {{TS38.211}}, whereas 4 ms is appropriate for 4G networks {{TS36.211}}.
 
-When a flow transitions from an idle buffer to an active state, the device must first request uplink transmission resources from the network. This initial scheduling turnaround can introduce a delay of approximately 3 ms to 6 ms. To prevent this initial delay from triggering spurious CE marks on the first packet of a burst or connection, implementations SHOULD apply an initial burst tolerance.
+When a flow transitions from an idle buffer to an active state, the device must first request uplink transmission resources from the network. This initial scheduling turnaround can introduce a delay. To prevent this initial delay from triggering spurious CE marks on the first packet of a burst or connection, implementations SHOULD apply an initial burst tolerance.
 
 Where the cellular network provides pre-allocated uplink transmission resources (such as semi-persistent scheduling or configured grants), the initial scheduling turnaround is eliminated, allowing implementations to use the lower steady-state threshold directly.
+TODO: write about 5G pre-scheduling and knowing when the next grant is. Do we have the same problem that wifi has?
+TODO: Should we write the same thing as in WiFi? When the latency is dominated by the channel aquisition time, CE marking might be counterproductive because it would signal congestion that can't be resolved by the client backing off. In these cases modem firmware SHOULD NOT mark congestion.
 
 Additionally, cellular link layers SHOULD minimize reordering delays on the radio interface. Where configurable, data bearers carrying L4S traffic SHOULD avoid link-layer in-order delivery enforcement (for example, utilizing unacknowledged mode or enabling link-layer out-of-order delivery). This ensures that physical layer retransmissions do not cause head-of-line blocking stalls in the modem buffer.
 
