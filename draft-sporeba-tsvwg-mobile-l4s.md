@@ -102,17 +102,17 @@ To enable UDP-based transport stacks (such as QUIC) to utilize L4S, the OS MUST 
 
 These capabilities MUST be exposed via standard socket APIs (e.g., `IP_TOS` and `IPV6_TCLASS` for setting, and `IP_RECVTOS` and `IPV6_RECVTCLASS` via ancillary data for reading) and MUST NOT be restricted by default security policies for standard application sockets. The APIs MUST allow reading the ECN codepoints on a per-packet basis. and MUST allow setting the ECN codepoints either on a per-socket or per-packet basis. The detailed explanation of configuring UDP sockets for ECN for common platforms is covered in {{I-D.ietf-tsvwg-udp-ecn}}. It should be noted that on some platforms setting ECN codepoints shares calls with DSCP codepoints, and applications might need to take steps to avoid overriding commands.
 
-UDP-based transport stacks SHOULD mark L4S-capable traffic as ECT(1) and MUST NOT mark non-L4S traffic as ECT(1). Other NQB traffic marked with DSCP 45 codepoint as per {{RFC9956, Section 3.3}}. Such traffic is considered compatible with L4S and can share the low-latency queue, but should be marked with ECT(1) only to signify the responsiveness to ECN markings (i.e. Prague L4S requirements {{RFC9331}}. Link layers MUST respond to misbehaving stack as discussed in {#defense-against-misbehaving-traffic}.
+UDP-based transport stacks SHOULD mark L4S-capable traffic as ECT(1) and MUST NOT mark non-L4S traffic as ECT(1). Other NQB traffic (e.g. marked with DSCP 45 codepoint as per {{RFC9956, Section 3.3}}) is considered compatible with L4S and can share the low-latency queue, but should be marked with ECT(1) only to signify the responsiveness to ECN markings (i.e. Prague L4S requirements {{RFC9331}}. Link layers MUST respond to misbehaving stack as discussed in {#defense-against-misbehaving-traffic}.
 
 ## TCP support detection and bootstrapping
 
-To allow L4S-capable senders (e.g., Internet servers) to take advantage of L4S, host operating systems and link-layers must negotiate ECN support and verify path integrity as described in Section 1.4 and Section 3 of {{RFC9768}}.
+To allow L4S-capable senders (e.g. Internet servers) to take advantage of L4S, host operating systems and link-layers must negotiate ECN support and verify path integrity as described in Section 1.4 and Section 3 of {{RFC9768}}.
 
 ### Per-network detection and latency mitigation
 
-If misconfigured networks or servers drop ECN negotiation packets, and the client does not retry without ECN negotiation, TCP connections will fail. Therefore, clients MUST implement retry strategies that disable ECN negotiation, as described in Section 3.1.4 and Section 3.2.3.2.2 of {{RFC9768}}. Note that a server replying with Not-ECT is does not require any additional retries and is not considered a failure.
+If misconfigured networks or servers drop ECN negotiation packets, and the client does not retry without ECN negotiation, TCP connections will fail. Therefore, clients MUST implement retry strategies that disable ECN negotiation, as described in Section 3.1.4 and Section 3.2.3.2.2 of {{RFC9768}}. Note that responses with Not-ECT do not require any additional retries and are not considered a failure.
 
-Latency and loss are critical to mobile applications, and retry strategies dependent on retransmissions and timeouts can lead to a degraded user experience. To ensure that L4S can be safely enabled without degrading the user experience in the presence of networks or servers that drop ECN negotiations or Accurate ECN TCP options, the client SHOULD balance implementing the retry strategies in section 3 of {{RFC9768}} with mechanisms to reduce the latency impact of retransmissions. A possible strategy is to only attempt ECN negotiation on the first SYN to a new server. Additionally, the host MAY cache ECN negotiation timeouts on a per-host or per-IP-address, or other basis.
+Latency and loss are critical to the mobile applications, and retry strategies dependent on retransmissions and timeouts can lead to a degraded user experience. To ensure that L4S can be safely enabled without degrading the user experience in the presence of networks or servers that drop ECN negotiations or Accurate ECN TCP options, the client SHOULD balance implementing the retry strategies in section 3 of {{RFC9768}} with mechanisms to reduce the latency impact of retransmissions. A possible strategy is to only attempt ECN negotiation on the first SYN to a new server. Additionally, the host MAY cache ECN negotiation timeouts on a per-host or per-IP-address, or other basis.
 
 If a host is in a network that blocks all ECN negotiation regardless of destination, all TCP connections will suffer latency impact. This will degrade the user experience even if failures are cached, because any connection to a server that is not in the cache will suffer an additional round trip delay.
 
@@ -155,7 +155,6 @@ The link-layer MUST map uplink traffic to the low-latency queue based on ECN mar
 
 Link-layer networks MUST NOT attempt to dynamically classify packets for the low-latency queue using heuristic traffic inference or Deep Packet Inspection (DPI). Classification MUST rely solely on the explicit packet markings set by the application endpoints. This ensures compatibility with fully encrypted payloads and aligns with the end-to-end principle and permissionless innovation, as discussed in the ISP deployment observations in {{I-D.livingood-low-latency-deployment}} (which also contains details on Wi-Fi link-layer queuing considerations).
 
-
 ## Uplink Active Queue Management (AQM) {#uplink-aqm}
 
 The link-layer uplink buffer within mobile subsystems (such as cellular modems and Wi-Fi drivers) operates as a dynamic bottleneck subject to rapid capacity fluctuations driven by radio grant scheduling, carrier aggregation shifts, and physical layer channel fading. To help achieve consistently low latency under these volatile conditions without inducing throughput degradation, implementations MUST deploy a Dual-Queue Coupled AQM framework adhering strictly to the functional design specifications of {{RFC9332}}.
@@ -164,7 +163,7 @@ In alignment with {{RFC9332}} Section 2.4, all internal marking states, delay ta
 
 ### Wi-Fi subsystem sojourn time recommendations
 
-In a shared wireless medium such as Wi-Fi, transmission requires contention-based spectrum acquisition and relies on frame aggregation to achieve channel efficiency. Often a buffer once scheduled for transmission cannot be expanded, resulting in traffic bursts and a potential delay for subsequent packets.  
+In a shared wireless medium such as Wi-Fi, transmission requires contention-based spectrum acquisition and relies on frame aggregation to achieve channel efficiency. Often a buffer once scheduled for transmission cannot be expanded, resulting in traffic bursts and a potential delay for subsequent packets.
 
 In low-congestion networks channel access is not a bottleneck. Therefore L4S will work as designed. To prevent erroneously signaling congestion during normal frame aggregation and transmission bursts, Wi-Fi implementations SHOULD configure the sojourn time step threshold to longer than the maximum burst time. For example, in Wi-Fi 7 (802.11be) the maximum A-MPDU transmission is 4 MB, transmitted over a maximum airtime of approx. 5.5 ms. Therefore a reasonable sojourn time threshold to use would be 6 ms.
 
@@ -181,12 +180,8 @@ During sustained transmission, the base station allocates uplink resources based
 When a flow transitions from an idle buffer to an active state, the device must first request uplink transmission resources from the network. This initial scheduling turnaround can introduce a delay. To prevent this initial delay from triggering spurious CE marks on the first packet of a burst or connection, implementations SHOULD apply an initial burst tolerance.
 
 Where the cellular network provides pre-allocated uplink transmission resources (such as semi-persistent scheduling or configured grants), the initial scheduling turnaround is eliminated, allowing implementations to use the lower steady-state threshold directly.
-TODO: write about 5G pre-scheduling and knowing when the next grant is. Do we have the same problem that wifi has?
-TODO: Should we write the same thing as in WiFi? When the latency is dominated by the channel aquisition time, CE marking might be counterproductive because it would signal congestion that can't be resolved by the client backing off. In these cases modem firmware SHOULD NOT mark congestion.
 
 Additionally, cellular link layers SHOULD minimize reordering delays on the radio interface. Where configurable, data bearers carrying L4S traffic SHOULD avoid link-layer in-order delivery enforcement (for example, utilizing unacknowledged mode or enabling link-layer out-of-order delivery). This ensures that physical layer retransmissions do not cause head-of-line blocking stalls in the modem buffer.
-
-
 
 ## Defense Against Misbehaving Traffic (Queue Protection) {#defense-against-misbehaving-traffic}
 
