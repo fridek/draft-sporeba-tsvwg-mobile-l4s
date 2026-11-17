@@ -11,7 +11,7 @@
 <meta content="
        This document documents best practices for deployment of Low Latency, Low Loss, and Scalable Throughput (L4S) in mobile devices. It defines the responsibilities of the host operating system, the link-layer (modem and WiFi) subsystems to ensure successful end-to-end low-latency communication. 
     " name="description">
-<meta content="xml2rfc 3.34.0" name="generator">
+<meta content="xml2rfc 3.35.0" name="generator">
 <meta content="L4S" name="keyword">
 <meta content="Mobile" name="keyword">
 <meta content="Cellular" name="keyword">
@@ -20,19 +20,19 @@
 <meta content="NQB" name="keyword">
 <meta content="draft-sporeba-tsvwg-mobile-l4s-latest" name="ietf.draft">
 <!-- Generator version information:
-  xml2rfc 3.34.0
-    Python 3.14.7
-    ConfigArgParse 1.7.5
+  xml2rfc 3.35.0
+    Python 3.14.10
+    ConfigArgParse 1.9.0
     google-i18n-address 3.1.1
     intervaltree 3.2.1
     Jinja2 3.1.6
     lxml 6.1.1
     natsort 8.4.0
-    platformdirs 4.11.7
+    platformdirs 4.14.3
     pycountry 24.6.1
     PyYAML 6.0.3
     requests 2.33.1
-    wcwidth 0.8.3
+    wcwidth 0.9.4
 -->
 <link href="draft-sporeba-tsvwg-mobile-l4s.xml" rel="alternate" type="application/rfc+xml">
 <link href="#copyright" rel="license">
@@ -1033,7 +1033,7 @@ svg {
   & :is([stroke="white"], [stroke^="#fff"]) {
     stroke: var(--background-color);
   }
-  & :is([fill="black"], [fill^="#000"], :not([fill])) {
+  & :is([fill="black"], [fill^="#000"], :not([fill], [fill] *)) {
     fill: var(--text-color);
   }
   & :is([fill="white"], [fill^="#fff"]) {
@@ -1048,11 +1048,11 @@ svg {
 <thead><tr>
 <td class="left">Internet-Draft</td>
 <td class="center">Mobile L4S</td>
-<td class="right">September 2026</td>
+<td class="right">November 2026</td>
 </tr></thead>
 <tfoot><tr>
 <td class="left">Poreba, et al.</td>
-<td class="center">Expires 7 March 2027</td>
+<td class="center">Expires 21 May 2027</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1065,12 +1065,12 @@ svg {
 <dd class="internet-draft">draft-sporeba-tsvwg-mobile-l4s-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-09-03" class="published">3 September 2026</time>
+<time datetime="2026-11-17" class="published">17 November 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Best Current Practice</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2027-03-07">7 March 2027</time></dd>
+<dd class="expires"><time datetime="2027-05-21">21 May 2027</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1123,7 +1123,7 @@ svg {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 7 March 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 21 May 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1285,7 +1285,7 @@ appear in all capitals, as shown here.<a href="#section-1.1-1" class="pilcrow">�
 </li>
         </ol>
 <p id="section-2.1-3">These capabilities <span class="bcp14">MUST</span> be exposed via standard socket APIs (e.g., <code>IP_TOS</code> and <code>IPV6_TCLASS</code> for setting, and <code>IP_RECVTOS</code> and <code>IPV6_RECVTCLASS</code> via ancillary data for reading) and <span class="bcp14">MUST NOT</span> be restricted by default security policies for standard application sockets. The APIs <span class="bcp14">MUST</span> allow reading the ECN codepoints on a per-packet basis. and <span class="bcp14">MUST</span> allow setting the ECN codepoints either on a per-socket or per-packet basis. The detailed explanation of configuring UDP sockets for ECN for common platforms is covered in <span>[<a href="#I-D.ietf-tsvwg-udp-ecn" class="cite xref">I-D.ietf-tsvwg-udp-ecn</a>]</span>. It should be noted that on some platforms setting ECN codepoints shares calls with DSCP codepoints, and applications might need to take steps to avoid overriding commands.<a href="#section-2.1-3" class="pilcrow">¶</a></p>
-<p id="section-2.1-4">UDP-based transport stacks <span class="bcp14">SHOULD</span> mark L4S-capable traffic as ECT(1) and <span class="bcp14">MUST NOT</span> mark non-L4S traffic as ECT(1). Other NQB traffic marked with DSCP 45 codepoint as per <span>[<a href="#RFC9956" class="cite xref">RFC9956</a>], <a href="https://rfc-editor.org/rfc/rfc9956#section-3.3" class="relref">Section 3.3</a></span>. Such traffic is considered compatible with L4S and can share the low-latency queue, but should be marked with ECT(1) only to signify the responsiveness to ECN markings (i.e. Prague L4S requirements <span>[<a href="#RFC9331" class="cite xref">RFC9331</a>]</span>. Link layers <span class="bcp14">MUST</span> respond to misbehaving stack as discussed in {#defense-against-misbehaving-traffic}.<a href="#section-2.1-4" class="pilcrow">¶</a></p>
+<p id="section-2.1-4">UDP-based transport stacks <span class="bcp14">SHOULD</span> mark L4S-capable traffic as ECT(1) and <span class="bcp14">MUST NOT</span> mark non-L4S traffic as ECT(1). Other NQB traffic (e.g. marked with DSCP 45 codepoint as per <span>[<a href="#RFC9956" class="cite xref">RFC9956</a>], <a href="https://rfc-editor.org/rfc/rfc9956#section-3.3" class="relref">Section 3.3</a></span>) is considered compatible with L4S and can share the low-latency queue, but should be marked with ECT(1) only to signify the responsiveness to ECN markings (i.e. Prague L4S requirements <span>[<a href="#RFC9331" class="cite xref">RFC9331</a>]</span>. Link layers <span class="bcp14">MUST</span> respond to misbehaving stack as discussed in {#defense-against-misbehaving-traffic}.<a href="#section-2.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="tcp-support-detection-and-bootstrapping">
@@ -1293,14 +1293,14 @@ appear in all capitals, as shown here.<a href="#section-1.1-1" class="pilcrow">�
         <h3 id="name-tcp-support-detection-and-b">
 <a href="#section-2.2" class="section-number selfRef">2.2. </a><a href="#name-tcp-support-detection-and-b" class="section-name selfRef">TCP support detection and bootstrapping</a>
         </h3>
-<p id="section-2.2-1">To allow L4S-capable senders (e.g., Internet servers) to take advantage of L4S, host operating systems and link-layers must negotiate ECN support and verify path integrity as described in Section 1.4 and Section 3 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
+<p id="section-2.2-1">To allow L4S-capable senders (e.g. Internet servers) to take advantage of L4S, host operating systems and link-layers must negotiate ECN support and verify path integrity as described in Section 1.4 and Section 3 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
 <div id="per-network-detection-and-latency-mitigation">
 <section id="section-2.2.1">
           <h4 id="name-per-network-detection-and-l">
 <a href="#section-2.2.1" class="section-number selfRef">2.2.1. </a><a href="#name-per-network-detection-and-l" class="section-name selfRef">Per-network detection and latency mitigation</a>
           </h4>
-<p id="section-2.2.1-1">If misconfigured networks or servers drop ECN negotiation packets, and the client does not retry without ECN negotiation, TCP connections will fail. Therefore, clients <span class="bcp14">MUST</span> implement retry strategies that disable ECN negotiation, as described in Section 3.1.4 and Section 3.2.3.2.2 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>. Note that a server replying with Not-ECT is does not require any additional retries and is not considered a failure.<a href="#section-2.2.1-1" class="pilcrow">¶</a></p>
-<p id="section-2.2.1-2">Latency and loss are critical to mobile applications, and retry strategies dependent on retransmissions and timeouts can lead to a degraded user experience. To ensure that L4S can be safely enabled without degrading the user experience in the presence of networks or servers that drop ECN negotiations or Accurate ECN TCP options, the client <span class="bcp14">SHOULD</span> balance implementing the retry strategies in section 3 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span> with mechanisms to reduce the latency impact of retransmissions. A possible strategy is to only attempt ECN negotiation on the first SYN to a new server. Additionally, the host <span class="bcp14">MAY</span> cache ECN negotiation timeouts on a per-host or per-IP-address, or other basis.<a href="#section-2.2.1-2" class="pilcrow">¶</a></p>
+<p id="section-2.2.1-1">If misconfigured networks or servers drop ECN negotiation packets, and the client does not retry without ECN negotiation, TCP connections will fail. Therefore, clients <span class="bcp14">MUST</span> implement retry strategies that disable ECN negotiation, as described in Section 3.1.4 and Section 3.2.3.2.2 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span>. Note that responses with Not-ECT do not require any additional retries and are not considered a failure.<a href="#section-2.2.1-1" class="pilcrow">¶</a></p>
+<p id="section-2.2.1-2">Latency and loss are critical to the mobile applications, and retry strategies dependent on retransmissions and timeouts can lead to a degraded user experience. To ensure that L4S can be safely enabled without degrading the user experience in the presence of networks or servers that drop ECN negotiations or Accurate ECN TCP options, the client <span class="bcp14">SHOULD</span> balance implementing the retry strategies in section 3 of <span>[<a href="#RFC9768" class="cite xref">RFC9768</a>]</span> with mechanisms to reduce the latency impact of retransmissions. A possible strategy is to only attempt ECN negotiation on the first SYN to a new server. Additionally, the host <span class="bcp14">MAY</span> cache ECN negotiation timeouts on a per-host or per-IP-address, or other basis.<a href="#section-2.2.1-2" class="pilcrow">¶</a></p>
 <p id="section-2.2.1-3">If a host is in a network that blocks all ECN negotiation regardless of destination, all TCP connections will suffer latency impact. This will degrade the user experience even if failures are cached, because any connection to a server that is not in the cache will suffer an additional round trip delay.<a href="#section-2.2.1-3" class="pilcrow">¶</a></p>
 <p id="section-2.2.1-4">A host system that wants to be resilient to this <span class="bcp14">MAY</span> attempt a connectivity check to a known, L4S-supporting service. In case of check failure, the result can be used to turn off L4S negotiation attempts for a given network, represented by PLMN/APN (in carrier networks) or SSID/BSSID (in Wi-Fi networks).<a href="#section-2.2.1-4" class="pilcrow">¶</a></p>
 <p id="section-2.2.1-5">When maintaining such lists, entries <span class="bcp14">SHOULD</span> be retired after a reasonable TTL (e.g. 7 days), and <span class="bcp14">SHOULD</span> prefer information from more frequently used destinations.<a href="#section-2.2.1-5" class="pilcrow">¶</a></p>
@@ -1377,12 +1377,10 @@ Some link-layer systems already support high-priority and low-priority queues. T
           <h4 id="name-wi-fi-subsystem-sojourn-tim">
 <a href="#section-3.4.1" class="section-number selfRef">3.4.1. </a><a href="#name-wi-fi-subsystem-sojourn-tim" class="section-name selfRef">Wi-Fi subsystem sojourn time recommendations</a>
           </h4>
-<p id="section-3.4.1-1">In a shared wireless medium such as Wi-Fi, transmission requires contention-based spectrum acquisition and relies on frame aggregation to achieve channel efficiency. Often a buffer once scheduled for transmission cannot be expanded, resulting in traffic bursts and a potential delay for subsequent packets. To prevent erroneously signaling congestion during normal frame aggregation and transmission bursts, Wi-Fi implementations <span class="bcp14">SHOULD</span> configure the sojourn time step threshold to longer than the maximum burst time. For example, in Wi-Fi 7 (802.11be) Access Category Best Effort (AC_BE), the maximum A-MPDU transmission is 4 MB, transmitted over a maximum airtime of approx. 5.5 ms. Therefore a reasonable sojourn time threshold to use would be 6 ms.<a href="#section-3.4.1-1" class="pilcrow">¶</a></p>
-<p id="section-3.4.1-2">Wi-Fi subsystems <span class="bcp14">SHOULD</span> utilize MAC-layer QoS mechanisms to prioritize L4S traffic and reduce channel access delay. Default access categories (such as AC_BE) might experience a worst-case channel access wait exceeding the sojourn time defined by burst traffic protection.<a href="#section-3.4.1-2" class="pilcrow">¶</a></p>
-<p id="section-3.4.1-3">For example, for Wi-Fi 7 (802.11be) AC_BE the maximum uninterrupted backoff countdown is approx. 9.2 ms (<span>[<a href="#IEEE-802.11-2024" class="cite xref">IEEE-802.11-2024</a>]</span> Table 9-194). For Access Category Video (AC_VI) this time is only 0.135 ms. The standard also caps the transmission opportunity time (TXOPLimit) for AC_VI to typically 3 ms.<a href="#section-3.4.1-3" class="pilcrow">¶</a></p>
-<p id="section-3.4.1-4">While it might sound attractive to raise the sojourn time threshold of AC_BE traffic to accommodate the total channel access delay experienced under heavy contention (for example to 30 ms), doing so would cause L4S congestion controls to maintain an unnecessarily large buffer, comparable with other non-ECN-responsive congestion controls.<a href="#section-3.4.1-4" class="pilcrow">¶</a></p>
-<p id="section-3.4.1-5">Therefore, Wi-Fi subsystems <span class="bcp14">SHOULD</span> assign ECT(1) marked traffic to an Access Category more appropriate for low-latency traffic (such as Video - AC_VI). This is analogous to the DSCP-to-UP mapping described in <span>[<a href="#RFC8325" class="cite xref">RFC8325</a>], <a href="https://rfc-editor.org/rfc/rfc8325#section-4.2" class="relref">Section 4.2</a></span>. In these cases, the sojourn time might no longer be limited by A-MPDU, and implementations <span class="bcp14">SHOULD</span> use a lower sojourn time threshold derived from TXOPLimit (for example, a value of 4 ms for AC_VI).<a href="#section-3.4.1-5" class="pilcrow">¶</a></p>
-<p id="section-3.4.1-6">In standards that support multi-TID frame aggregation (such as IEEE 802.11be), different access categories can be mixed into a single A-MPDU aggregate. In these scenarios the link-layer subsystem <span class="bcp14">SHOULD NOT</span> bundle latency-sensitive L4S frames with traffic using longer transmission windows.<a href="#section-3.4.1-6" class="pilcrow">¶</a></p>
+<p id="section-3.4.1-1">In a shared wireless medium such as Wi-Fi, transmission requires contention-based spectrum acquisition and relies on frame aggregation to achieve channel efficiency. Often a buffer once scheduled for transmission cannot be expanded, resulting in traffic bursts and a potential delay for subsequent packets.<a href="#section-3.4.1-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.1-2">In low-congestion networks channel access is not a bottleneck. Therefore L4S will work as designed. To prevent erroneously signaling congestion during normal frame aggregation and transmission bursts, Wi-Fi implementations <span class="bcp14">SHOULD</span> configure the sojourn time step threshold to longer than the maximum burst time. For example, in Wi-Fi 7 (802.11be) the maximum A-MPDU transmission is 4 MB, transmitted over a maximum airtime of approx. 5.5 ms. Therefore a reasonable sojourn time threshold to use would be 6 ms.<a href="#section-3.4.1-2" class="pilcrow">¶</a></p>
+<p id="section-3.4.1-3">When the latency is dominated by the channel aquisition time, CE marking might be counterproductive because it would signal congestion that can't be resolved by the client backing off. In these cases WiFi firmware <span class="bcp14">SHOULD NOT</span> mark congestion.<a href="#section-3.4.1-3" class="pilcrow">¶</a></p>
+<p id="section-3.4.1-4">In standards that support multi-TID frame aggregation (such as IEEE 802.11be), different access categories can be mixed into a single A-MPDU aggregate. In these scenarios the link-layer subsystem <span class="bcp14">SHOULD NOT</span> bundle latency-sensitive L4S frames with traffic using longer transmission windows.<a href="#section-3.4.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="cellular-subsystem-sojourn-time-recommendations">
@@ -1392,7 +1390,7 @@ Some link-layer systems already support high-priority and low-priority queues. T
           </h4>
 <p id="section-3.4.2-1">Unlike the contention-based channel access of Wi-Fi, cellular networks utilize centralized, grant-based uplink scheduling managed by the base station.<a href="#section-3.4.2-1" class="pilcrow">¶</a></p>
 <p id="section-3.4.2-2">During sustained transmission, the base station allocates uplink resources based on buffer status reports in ongoing traffic. Without contention backoff, the queue drains on each radio scheduling interval. Cellular modem implementations <span class="bcp14">SHOULD</span> configure the native L4S sojourn time step threshold based on the radio scheduling interval and physical-layer retransmission turnaround. For example, a threshold of 2 ms is appropriate for 5G networks <span>[<a href="#TS38.211" class="cite xref">TS38.211</a>]</span>, whereas 4 ms is appropriate for 4G networks <span>[<a href="#TS36.211" class="cite xref">TS36.211</a>]</span>.<a href="#section-3.4.2-2" class="pilcrow">¶</a></p>
-<p id="section-3.4.2-3">When a flow transitions from an idle buffer to an active state, the device must first request uplink transmission resources from the network. This initial scheduling turnaround can introduce a delay of approximately 3 ms to 6 ms. To prevent this initial delay from triggering spurious CE marks on the first packet of a burst or connection, implementations <span class="bcp14">SHOULD</span> apply an initial burst tolerance.<a href="#section-3.4.2-3" class="pilcrow">¶</a></p>
+<p id="section-3.4.2-3">When a flow transitions from an idle buffer to an active state, the device must first request uplink transmission resources from the network. This initial scheduling turnaround can introduce a delay. To prevent this initial delay from triggering spurious CE marks on the first packet of a burst or connection, implementations <span class="bcp14">SHOULD</span> apply an initial burst tolerance.<a href="#section-3.4.2-3" class="pilcrow">¶</a></p>
 <p id="section-3.4.2-4">Where the cellular network provides pre-allocated uplink transmission resources (such as semi-persistent scheduling or configured grants), the initial scheduling turnaround is eliminated, allowing implementations to use the lower steady-state threshold directly.<a href="#section-3.4.2-4" class="pilcrow">¶</a></p>
 <p id="section-3.4.2-5">Additionally, cellular link layers <span class="bcp14">SHOULD</span> minimize reordering delays on the radio interface. Where configurable, data bearers carrying L4S traffic <span class="bcp14">SHOULD</span> avoid link-layer in-order delivery enforcement (for example, utilizing unacknowledged mode or enabling link-layer out-of-order delivery). This ensures that physical layer retransmissions do not cause head-of-line blocking stalls in the modem buffer.<a href="#section-3.4.2-5" class="pilcrow">¶</a></p>
 </section>
