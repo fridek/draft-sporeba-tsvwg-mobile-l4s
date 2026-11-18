@@ -195,29 +195,9 @@ To defend the Low-Latency queue while remaining fully compliant with the normati
 
 The link-layer MUST NOT modify the ECN bits, DSCP codepoints, or AccECN TCP options (172 and 174) on transit traffic, except for performing standard CE marking in the event of queue buildup.
 
-# On-Path Node Requirements
-
-On-Path Nodes MUST NOT classify traffic into low-latency queues or rewrite ECN/DSCP markings based on traffic heuristics or DPI. As discussed in {{I-D.livingood-low-latency-deployment}}, active classification decisions MUST be left to the application endpoints, and on-path devices MUST rely solely on explicit packet markings for queue selection and marking the ECN bits in the event of a queue forming.
-
-## ECN and AccECN Transparency
-
-On-Path Nodes MUST NOT clear (bleach) ECN bits, in accordance with {{RFC3168}}. They MUST preserve `ECT(0)`, `ECT(1)`, and `CE` markings on all IP packets, except for remarking `ECT(0)` or `ECT(1)` to `CE` in the event of a queue forming. Similarly, On-Path Nodes MUST NOT strip or modify TCP options 172 or 174, or drop packets solely because they contain these options.
-
-Non-compliant behaviour can lead to timeouts and retransmits in the TCP handshake, and consequently to a degraded user experience.
-
-## Handshake Forwarding
-
-On-Path Nodes MUST transparently forward `SYN`, `SYN-ACK`, and initial `ACK` packets that negotiate ECN or AccECN. On-Path Nodes MUST NOT drop TCP handshake packets solely due to the presence of ECN negotiation flags or AccECN TCP options.
-
-## Mitigation Against Non-Compliant Prioritisation
-
-On-Path Nodes MUST NOT act on `ECT(1)` codepoints to prioritise traffic in alternative, non-compliant ways unless a valid end-to-end feedback loop is actively maintained—where the network nodes execute compliant congestion marking and the transport endpoints record and reflect those markings in line with the transport-specific requirements specified in Section 4.2 of {{RFC9331}}.
-
-Network deployments that don't support low-latency queues, and instead prioritise ECN-marked traffic based on alternative heuristics (such as bandwidth allocation multipliers), are not an L4S deployment. The risk of such alternative mechanisms is incentivising marking `ECT(1)` codepoints in flows to be allocated into prioritised queues, without implementing full L4S congestion control as described in {#defense-against-misbehaving-traffic}. The convergence point of such behaviour would be a prevalence of `ECT(1)`-marked traffic that does not respond to `CE` markings and congestion in the incorrectly prioritised queues.
-
 # Security Considerations
 
-L4S introduces potential abuse vectors where applications mark queue-building traffic as low-latency. As described in {#defense-against-misbehaving-traffic}, the link-layer subsystem MUST deploy queue protection mechanisms to defend the low-latency queue from starvation and latency degradation.
+L4S introduces potential abuse vectors where applications mark queue-building traffic as low-latency. This risk is amplified if networks without low-latency queues instead prioritise `ECT(1)`-marked traffic using alternative heuristics (such as bandwidth allocation multipliers) without an active end-to-end congestion-marking feedback loop (Section 4.2 of {{RFC9331}}), incentivising endpoints to mark `ECT(1)` without implementing L4S congestion control. Regardless of network behaviour, host stacks and applications MUST NOT mark traffic as `ECT(1)` unless using compliant L4S congestion control. As described in {#defense-against-misbehaving-traffic}, the link-layer subsystem MUST deploy queue protection mechanisms to defend the low-latency queue from starvation and latency degradation.
 
 # IANA Considerations
 
