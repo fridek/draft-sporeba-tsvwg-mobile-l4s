@@ -140,19 +140,18 @@ Table of Contents
 
    UDP-based transport stacks SHOULD mark L4S-capable traffic as ECT(1)
    and MUST NOT mark non-L4S traffic as ECT(1).  Other NQB traffic
-   (e.g., marked with DSCP 45 codepoint as per [RFC9956], Section 3.3)
-   is considered compatible with L4S and can share the low-latency
-   queue, but should be marked with ECT(1) only to signify the
-   responsiveness to ECN markings (i.e., Prague L4S requirements
-   [RFC9331]).  Link layers MUST respond to misbehaving stacks as
-   discussed in {#defense-against-misbehaving-traffic}.
+   (e.g., marked with DSCP 45 codepoint) is considered compatible with
+   L4S and can share the low-latency queue (Section 3.3 of [RFC9956]),
+   but should be marked with ECT(1) only to signify the responsiveness
+   to ECN markings (i.e., Prague L4S requirements [RFC9331]).  Link
+   layers MUST respond to misbehaving stacks as discussed in
+   Section 3.5.
 
 2.2.  TCP support detection and bootstrapping
 
    To allow L4S-capable senders (e.g., Internet servers) to take
    advantage of L4S, host operating systems must negotiate ECN support
-   and verify path integrity as described in Section 1.4 and Section 3
-   of [RFC9768].
+   and verify path integrity as described in Section 3 of [RFC9768].
 
 2.2.1.  Per-network detection and latency mitigation
 
@@ -160,10 +159,10 @@ Table of Contents
    and the client does not retry without ECN negotiation, TCP
    connections will fail.  Therefore, clients MUST implement retry
    strategies that disable ECN negotiation, as described in
-   Section 3.1.4 and Section 3.2.3.2.2 of [RFC9768].  Note that a SYN-
-   ACK declining AccECN or ECN in the TCP header flags (falling back to
-   Classic ECN or Non-ECN as per Section 3.1.2 of [RFC9768]) does not
-   require any retries and is not considered a failure.
+   Section 3.1.4.1 of [RFC9768].  Note that a SYN-ACK declining AccECN
+   or ECN in the TCP header flags (falling back to Classic ECN or Non-
+   ECN as per Section 3.1.2 of [RFC9768]) does not require any retries
+   and is not considered a failure.
 
    Latency and loss are critical to mobile applications, and retry
    strategies dependent on retransmissions and timeouts can lead to a
@@ -230,22 +229,23 @@ Table of Contents
    enforcing link-layer in-order delivery, ensuring that air-interface
    retransmissions do not cause head-of-line blocking stalls.
 
-   [RFC9331] §4.3 specifies that loss detection SHOULD be resilient to
-   packet reordering.  However, to enable the requirement on the
-   cellular modem behaviour described above, L4S-aware protocol stacks
-   on mobile devices MUST be prepared to receive out-of-order packets.
+   Section 4.3 of [RFC9331] specifies that loss detection SHOULD be
+   resilient to packet reordering.  However, to enable the requirement
+   on the cellular modem behaviour described above, L4S-aware protocol
+   stacks on mobile devices MUST be prepared to receive out-of-order
+   packets.
 
 3.2.  Multi-Queue Scheduling and Bounded Latency Queueing
 
    Any link layer that supports L4S MUST provide a low-latency queue
-   designated for L4S traffic and Non-Queue-Building traffic ([RFC9956]
-   section 3.3).  This queue MUST be bounded as described in {#uplink-
-   aqm} and {#defense-against-misbehaving-traffic}. Some link-layer
-   systems already support high-priority and low-priority queues.  These
-   queues are typically not latency-bounded, and therefore cannot
-   guarantee the low-latency benefits of L4S.  If the link layer
-   provides such queues, the low-latency queue MUST be distinct from
-   them.  An example configuration might be:
+   designated for L4S traffic and Non-Queue-Building traffic
+   (Section 3.3 of [RFC9956]).  This queue MUST be bounded as described
+   in Section 3.4 and Section 3.5.  Some link-layer systems already
+   support high-priority and low-priority queues.  These queues are
+   typically not latency-bounded, and therefore cannot guarantee the
+   low-latency benefits of L4S.  If the link layer provides such queues,
+   the low-latency queue MUST be distinct from them.  An example
+   configuration might be:
 
    *  *Low-Latency Queue:* For L4S and other Non-Queue-Building traffic.
 
@@ -298,9 +298,10 @@ Table of Contents
    adhering strictly to the functional design specifications of
    [RFC9332].
 
-   In alignment with [RFC9332] Section 2.4, all internal marking states,
-   delay targets, and marking thresholds MUST be calculated using packet
-   sojourn time rather than raw bytes or static packet counts.
+   In alignment with Section 2.4 of [RFC9332], all internal marking
+   states, delay targets, and marking thresholds MUST be configured in
+   units of time (e.g., packet sojourn time as in Appendix A.1 of
+   [RFC9332]) rather than raw bytes or static packet counts.
 
 3.4.1.  Wi-Fi subsystem sojourn time recommendations
 
@@ -378,7 +379,7 @@ Table of Contents
       saturation is detected (i.e., marking capacity is exhausted at
       100% ECN signalling or the queue delay persistently exceeds
       operational bounds), the link-layer MUST introduce packet drops as
-      specified in Sections 2.5.1.1 and 4.2.3 of [RFC9332].
+      specified in Sections 2.5.1 and 4.2.3 of [RFC9332].
 
    *  *Buffer Limit Metrics:* The link-layer MUST enforce a strict
       ceiling on the maximum physical capacity of the Low-Latency queue.
@@ -387,8 +388,8 @@ Table of Contents
       count rather than raw bytes, operating strictly as a final tail-
       drop mechanism at physical hardware capacity exhaustion.
 
-   *  *Flow Isolation Architecture:* As noted in [RFC9332]
-      Section 4.2.2, scheduling weights alone cannot resolve long-term
+   *  *Flow Isolation Architecture:* As noted in Section 4.2 of
+      [RFC9332], scheduling weights alone cannot resolve long-term
       overload across a shared buffer.  For mobile device environments
       requiring robust traffic defence against rogue applications, the
       link-layer MAY layer a per-flow queueing discipline or flow-
@@ -411,11 +412,10 @@ Table of Contents
    without low-latency queues instead prioritise ECT(1)-marked traffic
    using alternative heuristics (such as bandwidth allocation
    multipliers) without an active end-to-end congestion-marking feedback
-   loop (Section 4.2 of [RFC9331]), incentivising endpoints to mark
-   ECT(1) without implementing L4S congestion control.  Regardless of
-   network behaviour, host stacks and applications MUST NOT mark traffic
-   as ECT(1) unless using compliant L4S congestion control.  As
-   described in {#defense-against-misbehaving-traffic}, the link-layer
+   loop, incentivising endpoints to mark ECT(1) without implementing L4S
+   congestion control.  Regardless of network behaviour, host stacks and
+   applications MUST NOT mark traffic as ECT(1) unless using compliant
+   L4S congestion control.  As described in Section 3.5, the link-layer
    subsystem MUST deploy queue protection mechanisms to defend the low-
    latency queue from starvation and latency degradation.
 
@@ -432,25 +432,9 @@ Table of Contents
               DOI 10.17487/RFC2119, March 1997,
               <https://www.rfc-editor.org/rfc/rfc2119>.
 
-   [RFC3168]  Ramakrishnan, K., Floyd, S., and D. Black, "The Addition
-              of Explicit Congestion Notification (ECN) to IP",
-              RFC 3168, DOI 10.17487/RFC3168, September 2001,
-              <https://www.rfc-editor.org/rfc/rfc3168>.
-
    [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
               May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
-
-   [RFC8311]  Black, D., "Relaxing Restrictions on Explicit Congestion
-              Notification (ECN) Experimentation", RFC 8311,
-              DOI 10.17487/RFC8311, January 2018,
-              <https://www.rfc-editor.org/rfc/rfc8311>.
-
-   [RFC9330]  Briscoe, B., Ed., De Schepper, K., Bagnulo, M., and G.
-              White, "Low Latency, Low Loss, and Scalable Throughput
-              (L4S) Internet Service: Architecture", RFC 9330,
-              DOI 10.17487/RFC9330, January 2023,
-              <https://www.rfc-editor.org/rfc/rfc9330>.
 
    [RFC9331]  De Schepper, K. and B. Briscoe, Ed., "The Explicit
               Congestion Notification (ECN) Protocol for Low Latency,
@@ -492,9 +476,11 @@ Table of Contents
               802.11-2024, DOI 10.1109/IEEESTD.2025.10979691, April
               2025, <https://doi.org/10.1109/IEEESTD.2025.10979691>.
 
-   [RFC8325]  Szigeti, T., Henry, J., and F. Baker, "Mapping Diffserv to
-              IEEE 802.11", RFC 8325, DOI 10.17487/RFC8325, February
-              2018, <https://www.rfc-editor.org/rfc/rfc8325>.
+   [RFC9330]  Briscoe, B., Ed., De Schepper, K., Bagnulo, M., and G.
+              White, "Low Latency, Low Loss, and Scalable Throughput
+              (L4S) Internet Service: Architecture", RFC 9330,
+              DOI 10.17487/RFC9330, January 2023,
+              <https://www.rfc-editor.org/rfc/rfc9330>.
 
    [RFC10055] Duke, M., "Configuring UDP Sockets for Explicit Congestion
               Notification (ECN) for Common Platforms", RFC 10055,
