@@ -235,8 +235,8 @@ Table of Contents
    stacks on mobile devices MUST be prepared to receive out-of-order
    packets.
 
-   TODO: ECT(0), ECT(1) and CE and ECT(1) or CE needs to be defined
-   (borrowing the definitions from RFC9332).
+   TODO: ECT(0), ECT(1) and CE and ECT(1) or CE need to be collectively
+   defined (e.g. using the definitions defined in RFC9332).
 
 3.2.  Multi-Queue Scheduling and Bounded Latency Queueing
 
@@ -315,7 +315,8 @@ Table of Contents
    queue behaviours.  This needs to be quoted early (possibly by
    including here and moving this section above Multi-Queue Scheduling
    and Bounded Latency Queueing.  We need to reconsile how DualPI2 works
-   in the presence of pre-exising high-priority and low-priority queues.
+   in the presence of pre-exising high-priority and low-priority queues
+   (i.e. when there are three queues, one NQB and two queue-building).
 
 3.4.1.  Wi-Fi Subsystem Sojourn Time Recommendations
 
@@ -418,13 +419,18 @@ Table of Contents
       macro coupled framework requirements.
 
    TODO: This section needs to be revisited and aligned with the rest of
-   the text.
+   the text.  The overload drop fallback needs to be expanded on (what
+   specific problem does it solve).  Buffer limit metrics are
+   potentially redundant in presence of other text, and because the
+   finite nature of the queue is unavoidable.  Flow isolation is
+   difficult to implement in practice and we need to consider its
+   necessity.
 
 3.6.  Transparency and Bleach Prevention
 
    The link layer MUST NOT modify the ECN field, DSCP values, or AccECN
    TCP options (172 and 174) on transit traffic, except for performing
-   standard CE marking in the event of queue buildup.
+   standard CE marking in the event of the queue buildup.
 
 4.  Security Considerations
 
