@@ -70,6 +70,24 @@ informative:
       3GPP: "TS 36.213"
   I-D.livingood-low-latency-deployment:
   RFC10055:
+  IMC16-QCUT:
+    target: "https://doi.org/10.1145/2987443.2987490"
+    title: "Understanding On-device Bufferbloat for Cellular Upload"
+    author:
+      - ins: Y. Guo
+        name: Yihua Guo
+      - ins: F. Qian
+        name: Feng Qian
+      - ins: Q. A. Chen
+        name: Qi Alfred Chen
+      - ins: Z. M. Mao
+        name: Zhuoqing Morley Mao
+      - ins: S. Sen
+        name: Subhabrata Sen
+    date: 2016-11
+    seriesinfo:
+      ACM: "Proceedings of the 2016 Internet Measurement Conference (IMC '16)"
+      DOI: "10.1145/2987443.2987490"
 
 ...
 --- abstract
@@ -119,7 +137,7 @@ When maintaining per-destination or per-network caches, entries SHOULD be retire
 
 # Link-Layer Subsystem Requirements
 
-Link-layer subsystems, such as the cellular modem and Wi-Fi, schedule and manage the link-layer transmission over the physical medium interface. These systems typically perform significant queueing on the transmit path, and sometimes on the receive path as well.
+Link-layer subsystems, such as the cellular modem and Wi-Fi, schedule and manage transmission over the physical medium. Measurement studies on mobile devices have shown that uplink standing queues form inside link-layer driver and baseband firmware buffers rather than in the host operating system networking stack, which renders host-level queue management ineffective on its own {{IMC16-QCUT}}. Moreover, because grant-based cellular links rely on buffer status reports derived from modem-resident queues to request uplink radio resources, queueing cannot simply be pushed up into the host operating system without degrading throughput. Consequently, the low-latency queue and active queue management MUST be implemented within the link-layer subsystem itself.
 
 ## Link-Layer Inbound Packet Reordering
 
@@ -133,35 +151,11 @@ Section 4.3 of {{RFC9331}} specifies that loss detection SHOULD be resilient to 
 
 TODO: `ECT(0)`, `ECT(1)` and `CE` and `ECT(1)` or `CE` need to be collectively defined (e.g. using the definitions defined in RFC9332).
 
-## Multi-Queue Scheduling and Bounded Latency Queueing
-
-Any link layer that supports L4S MUST provide a low-latency queue designated for L4S traffic () and Non-Queue-Building traffic (as defined by Section 3.3 of {{RFC9956}}). This queue MUST be bounded as described in {{uplink-aqm}} and {{defense-against-misbehaving-traffic}}.
-
-Some link-layer systems already support high-priority and low-priority queues. These queues are typically not latency-bounded, and therefore cannot guarantee the low-latency benefits of L4S. If the link layer provides such queues, the low-latency queue MUST be distinct from them. An example configuration might be:
-
-*  **Low-Latency Queue:** For L4S and other Non-Queue-Building traffic.
-*  **High-Priority Queue:** For high-priority but potentially queue-building traffic.
-*  **Low-Priority Queue:** For queue-building traffic (e.g., CUBIC/Reno) and bulk data.
-
-Link layers MUST ensure that the L4S queue does not starve the other queues if offered L4S traffic is higher than available bandwidth. Such prioritisation SHOULD use a scheduling algorithm (e.g., using the methods described in Section 4.2.2 of {{RFC9332}}) and aim to minimise the queue buildup in the low-latency queue.
-
-## Packet Classification
-
-The link layer MUST map uplink traffic to the low-latency queue based on ECN markings:
-
-*  Packets carrying the `ECT(1)` or `CE` codepoints in the IP header MUST be steered to the low-latency queue.
-*  The link layer SHOULD also support mapping to the low-latency queue based on the NQB DSCP value (45) {{RFC9956}} as an alternative or supplementary classifier for local uplink queueing. However, because DSCP markings are frequently bleached or remarked at network boundaries, ECN mapping remains the most reliable end-to-end classifier across mobile networks.
-
-Link-layer networks MUST NOT attempt to dynamically classify packets for the low-latency queue using heuristic traffic inference or Deep Packet Inspection (DPI). Classification MUST rely solely on the explicit packet markings set by the application endpoints. This ensures compatibility with fully encrypted payloads and aligns with the end-to-end principle and permissionless innovation, as discussed in the ISP deployment observations in {{I-D.livingood-low-latency-deployment}} (which also contains details on Wi-Fi link-layer queueing considerations).
-
 ## Uplink Active Queue Management (AQM) {#uplink-aqm}
 
-The link-layer uplink buffer within mobile subsystems (such as cellular modems and Wi-Fi drivers) operates as a dynamic bottleneck subject to rapid capacity fluctuations driven by radio grant scheduling, carrier aggregation shifts, and physical layer channel fading. To help achieve consistently low latency under these volatile conditions without inducing throughput degradation, implementations MUST deploy a Dual-Queue Coupled AQM framework adhering strictly to the functional design specifications of {{RFC9332}}.
+The link-layer uplink buffer within mobile subsystems (such as cellular modems and Wi-Fi drivers) operates as a dynamic bottleneck subject to rapid capacity fluctuations driven by radio grant scheduling, carrier aggregation shifts, and physical layer channel fading. To achieve consistently low latency under these conditions without inducing throughput degradation, implementations MUST deploy a Dual-Queue Coupled AQM complying with the functional requirements in Section 2.5.1 of {{RFC9332}}. In particular, the subsystem MUST maintain separate queues for low-latency and Classic traffic, each managed by an AQM, where the low-latency queue AQM applies `CE` marking to ECN-capable packets and a work-conserving scheduler grants conditional priority to the low-latency queue without starving Classic traffic (Section 4.2.2 of {{RFC9332}}).
 
 As mentioned in Notes a. to Appendix A.1 of {{RFC9332}}, the drain rate of the queue can vary if it is scheduled relative to other queues or if it accommodates fluctuations in a wireless medium. To auto-adjust to changes in drain rate, the queue needs to be measured in time (e.g., packet sojourn time), not bytes or packets. This approach naturally accommodates large aggregated frame structures (e.g., up to 64kB aggregated packets passed via GSO) without triggering premature congestion signals.
-
-TODO: RFC9332 section 2.5.1 specifies all the relevant low-latency queue behaviours. This needs to be quoted early (possibly by including here and moving this section above Multi-Queue Scheduling and Bounded Latency Queueing. We need to reconsile how DualPI2 works in the presence of pre-exising high-priority and low-priority queues (i.e. when there are three queues, one NQB and two queue-building).
-
 
 ### Wi-Fi Subsystem Sojourn Time Recommendations
 
@@ -182,6 +176,26 @@ During sustained transmission, the base station allocates uplink resources based
 When a flow transitions from an idle buffer to an active state, the device must first request uplink transmission resources from the network. This initial scheduling turnaround can introduce a delay. To prevent this initial delay from triggering spurious `CE` marks on the initial packets of a burst or connection, implementations SHOULD apply an initial burst tolerance.
 
 Where the cellular network provides pre-allocated uplink transmission resources (such as semi-persistent scheduling or configured grants), the initial scheduling turnaround is eliminated, allowing implementations to use the lower steady-state threshold directly.
+
+## Multi-Queue Scheduling and Bounded Latency Queueing
+
+Any link layer that supports L4S MUST provide a low-latency queue designated for L4S traffic ({{RFC9331}}) and Non-Queue-Building traffic (as defined by Section 3.3 of {{RFC9956}}). This queue MUST be bounded as described in {{uplink-aqm}} and {{defense-against-misbehaving-traffic}}.
+
+Some link-layer systems already support high-priority and low-priority queues within a bearer. These queues are typically not latency-bounded, and therefore cannot guarantee the low-latency benefits of L4S. If the link layer provides such queues, the low-latency queue MUST be distinct from them. An example configuration might be:
+
+*  **Low-Latency Queue:** For L4S and other Non-Queue-Building traffic.
+*  **High-Priority Queue:** For high-priority but potentially queue-building traffic.
+*  **Low-Priority Queue:** For queue-building traffic (e.g., CUBIC/Reno) and bulk data.
+
+When a Dual-Queue Coupled AQM ({{uplink-aqm}}) operates alongside high-priority and low-priority queues within the same bearer, traffic in the high-priority queue MUST NOT take unbounded precedence over the low-latency queue in a manner that delays low-latency packets beyond their target sojourn threshold. Scheduling and congestion coupling across the low-latency, high-priority, and low-priority queues SHOULD follow the guidance in Sections 2.5.1 and 4.2.2 of {{RFC9332}} so that queue-building flows remain bounded, the low-latency queue does not starve either queue-building queue under overload, and L4S flows coexist fairly with traffic in both queue-building queues.
+
+## Packet Classification
+
+The link layer MUST steer uplink packets carrying the `ECT(1)` or `CE` codepoints in the IP header to the low-latency queue. The link layer SHOULD also support mapping to the low-latency queue based on the NQB DSCP value (45) {{RFC9956}} as an alternative or supplementary classifier for local uplink queueing. However, because DSCP markings are frequently bleached or remarked at network boundaries, ECN mapping remains the most reliable end-to-end classifier across mobile networks.
+
+Where a device uses local host metadata (such as per-application or per-user priority markings) to steer traffic into a high-priority queue, classification based on `ECT(1)`, `CE`, and NQB markings MUST take precedence so that low-latency packets from prioritised applications are not diverted into a queue-building queue.
+
+Link-layer networks MUST NOT attempt to dynamically classify packets for the low-latency queue using heuristic traffic inference or Deep Packet Inspection (DPI). Classification MUST rely solely on the explicit packet markings set by the application endpoints. This ensures compatibility with fully encrypted payloads and aligns with the end-to-end principle and permissionless innovation, as discussed in the ISP deployment observations in {{I-D.livingood-low-latency-deployment}} (which also contains details on Wi-Fi link-layer queueing considerations).
 
 ## Defence Against Misbehaving Traffic (Queue Protection) {#defense-against-misbehaving-traffic}
 
