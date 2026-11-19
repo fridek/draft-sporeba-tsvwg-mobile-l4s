@@ -113,26 +113,45 @@ ECN-capable packet:
 L4S identifier (and L4S packet):
 : An IP-ECN field set to `ECT(1)` or `CE`, which link-layer and network nodes use to classify packets as L4S packets without per-flow state (Section 5.1 of {{RFC9331}}, Section 2.3 of {{RFC9332}}). Note that sending endpoints mark outgoing L4S packets as `ECT(1)`, whereas `CE` indicates congestion experienced along the path.
 
-# Host Operating System Requirements
+# Mobile Device Architecture
 
-The host operating system controls application-level network access and hosts the primary TCP and UDP transport stacks.
+Modern mobile devices separate the host operating system from link-layer subsystems such as cellular modems and Wi-Fi ({{fig-arch}}). The host operating system runs applications and manages socket APIs, transport protocols, and the IP stack. Link-layer subsystems manage wireless channel acquisition and air-interface retransmissions, and maintain their own internal packet buffers in both directions. On the downlink, active queue management resides in the network, whereas on the uplink, queueing occurs within the device's link-layer subsystem while awaiting channel access. Both the host operating system and link-layer subsystems need to correctly implement behaviours on the downlink and uplink paths relevant to L4S to achieve low-latency benefits.
 
-## Socket APIs for UDP
+~~~ ascii-art
++---------------- Mobile Device ----------------+
+|                                               |
+| +--------------+   +------------------------+ |
+| |   Host OS    |   |  Link-Layer Subsystem  | |
+| |              |   |   (Wi-Fi / Cellular)   | |
+| | Apps, Socket |   |                        | |
+| | APIs & TCP/  |   | +--------------------+ | |   Downlink
+| | UDP/IP Stack |<----| Inbound Reordering |<----------------
+| |              |   | |       Buffer       | | |
+| |              |   | +--------------------+ | |
+| |              |   | +--------------------+ | |    Uplink
+| |              |---->| Uplink Queues, AQM |---------------->
+| |              |   | |  & Channel Access  | | |
+| |              |   | +--------------------+ | |
+| +--------------+   +------------------------+ |
++-----------------------------------------------+
+~~~
+{: #fig-arch title="Mobile Device Data Path for Downlink and Uplink L4S"}
 
-To enable UDP-based transport stacks (such as QUIC) to utilise L4S, the OS MUST provide APIs that allow applications to:
+# Downlink Requirements
 
-1. Set the ECN codepoint {{RFC9331}} on outgoing packets.
-1. Read the ECN codepoints of incoming packets.
+On the downlink, remote senders transmit L4S traffic toward the mobile device while bottleneck active queue management is performed in the network. The mobile device is responsible for delivering received packets without link-layer reordering delays, preserving congestion markings, and reporting accurate ECN feedback back to the sender.
 
-These capabilities MUST be exposed via standard socket APIs (e.g., `IP_TOS` and `IPV6_TCLASS` for setting, and `IP_RECVTOS` and `IPV6_RECVTCLASS` via ancillary data for reading) and MUST NOT be restricted by default security policies for standard application sockets. The APIs MUST allow reading the ECN codepoints on a per-packet basis, and MUST allow setting the ECN codepoints either on a per-socket or per-packet basis. The detailed explanation of configuring UDP sockets for ECN for common platforms is covered in {{RFC10055}}. It should be noted that on some platforms, setting ECN codepoints shares calls with DSCP values, and applications might need to take steps to avoid overwriting existing DSCP or ECN markings.
+## Host Operating System {#downlink-host-os}
 
-UDP-based transport stacks SHOULD mark L4S-capable traffic as `ECT(1)` and MUST NOT mark non-L4S traffic as `ECT(1)`. Other Non-Queue-Building (NQB) traffic (e.g., marked with DSCP 45) is considered compatible with L4S and can share the low-latency queue (Section 3.3 of {{RFC9956}}), and MUST NOT be marked as `ECT(1)` unless it also satisfies the Prague L4S requirements {{RFC9331}}. Link-layer handling of misbehaving traffic is described in {{defense-against-misbehaving-traffic}}.
+### UDP Socket APIs for Reading ECN
 
-## TCP Support Detection and Bootstrapping
+To enable UDP-based transport stacks (such as QUIC) to receive L4S traffic and report congestion feedback to the sender, the OS MUST provide APIs that allow applications to read the ECN codepoints of incoming packets on a per-packet basis. This capability MUST be exposed via standard socket APIs (e.g., `IP_RECVTOS` and `IPV6_RECVTCLASS` via ancillary data) and MUST NOT be restricted by default security policies for standard application sockets. Configuring UDP sockets for ECN on common platforms is detailed in {{RFC10055}}.
+
+### TCP Support Detection and Bootstrapping {#tcp-support-detection}
 
 To allow L4S-capable senders (e.g., Internet servers) to take advantage of L4S, host operating systems MUST negotiate Accurate ECN (AccECN) support and verify path integrity as described in Section 3 of {{RFC9768}}.
 
-### Per-Network Detection and Latency Mitigation
+#### Per-Network Detection and Latency Mitigation
 
 If misconfigured networks or servers drop ECN negotiation packets, and the client does not retry without ECN negotiation, TCP connections will fail. Therefore, clients MUST implement retry strategies that disable ECN negotiation, as described in Section 3.1.4.1 of {{RFC9768}}. Note that a SYN-ACK declining AccECN or ECN in the TCP header flags (falling back to Classic ECN or Non-ECN as per Section 3.1.2 of {{RFC9768}}) does not require any retries and is not considered a failure.
 
@@ -144,27 +163,49 @@ A host system that wants to be resilient to this MAY attempt a connectivity chec
 
 When maintaining per-destination or per-network caches, entries SHOULD be retired after a reasonable TTL (e.g., 7 days).
 
-# Link-Layer Subsystem Requirements
+## Link-Layer Subsystems {#downlink-link-layer}
 
-Link-layer subsystems, such as the cellular modem and Wi-Fi, schedule and manage transmission over the physical medium. Measurement studies on mobile devices have shown that uplink standing queues form inside link-layer driver and baseband firmware buffers rather than in the host operating system networking stack, which renders host-level queue management ineffective on its own {{IMC16-QCUT}}. Moreover, because grant-based cellular links rely on buffer status reports derived from modem-resident queues to request uplink radio resources, queueing cannot simply be pushed up into the host operating system without degrading throughput. Consequently, the low-latency queue and active queue management MUST be implemented within the link-layer subsystem itself.
-
-## Link-Layer Inbound Packet Reordering
+### Inbound Packet Reordering
 
 Some link layers provide strong ordering guarantees for inbound packets by assigning a link-layer sequence number to each packet and buffering incoming packets so they can be presented to the host operating system in order. In particular, cellular networks often perform out-of-order packet delivery at the physical layer, but require the cellular modem to deliver received packets to the host operating system in order. When packets are received out of order on the air interface, the modem waits up to a network-configurable timeout to receive all previous packets. This causes out-of-order packets to be delayed until all previous packets have been received, and causes latency spikes when packets are lost due to transmission errors.
 
 Delaying received packets increases latency, which is contrary to the low-latency goals of L4S. Also, by artificially introducing delays that were not imposed by the network, it reduces the accuracy of protocol rate estimation. The additional delays do not benefit protocol stacks which are equipped to handle out-of-order packets.
 
-Link-layer subsystems MUST NOT buffer outbound and inbound ECN-capable packets in a way that imposes measurable latency to the protocol stack. Correspondingly, cellular modems SHOULD ensure that ECN-capable packets can be delivered out-of-order rather than delay to deliver them in-order. This ensures that air-interface retransmissions do not cause head-of-line blocking stalls.
+Link-layer subsystems MUST NOT buffer inbound ECN-capable packets in a way that imposes measurable latency to the protocol stack. Correspondingly, cellular modems SHOULD ensure that ECN-capable packets can be delivered out-of-order rather than delay to deliver them in-order. This ensures that air-interface retransmissions do not cause head-of-line blocking stalls.
 
 Section 4.3 of {{RFC9331}} specifies that loss detection SHOULD be resilient to packet reordering. However, to enable the requirement on the cellular modem behaviour described above, L4S-aware protocol stacks on mobile devices MUST be prepared to receive out-of-order packets.
 
-## Uplink Active Queue Management (AQM) {#uplink-aqm}
+### Downlink Transparency and Bleach Prevention
+
+The link layer MUST NOT modify the ECN field, DSCP values, or AccECN TCP options (172 and 174) on inbound traffic or on outbound acknowledgements.
+
+# Uplink Requirements
+
+On the uplink, the mobile device originates traffic and its link-layer subsystem acts as a dynamic bottleneck while acquiring wireless channel resources.
+
+## Host Operating System {#uplink-host-os}
+
+### UDP Socket APIs and Packet Marking
+
+To enable UDP-based transport stacks (such as QUIC) to send L4S traffic, the OS MUST provide APIs that allow applications to set the ECN codepoint {{RFC9331}} on outgoing packets on either a per-socket or per-packet basis. This capability MUST be exposed via standard socket APIs (e.g., `IP_TOS` and `IPV6_TCLASS`, as detailed in {{RFC10055}}) and MUST NOT be restricted by default security policies for standard application sockets. On some platforms, setting ECN codepoints shares calls with DSCP values, and applications might need to take steps to avoid overwriting existing DSCP or ECN markings.
+
+UDP-based transport stacks SHOULD mark L4S-capable traffic as `ECT(1)` and MUST NOT mark non-L4S traffic as `ECT(1)`. Other Non-Queue-Building (NQB) traffic (e.g., marked with DSCP 45) is considered compatible with L4S and can share the low-latency queue (Section 3.3 of {{RFC9956}}), and MUST NOT be marked as `ECT(1)` unless it also satisfies the Prague L4S requirements {{RFC9331}}. Link-layer handling of misbehaving traffic is described in {{defense-against-misbehaving-traffic}}.
+
+### TCP Sender Requirements
+
+Where the host OS TCP stack sends L4S traffic on the uplink, it relies on Accurate ECN negotiation as described in {{tcp-support-detection}} and MUST use a compliant L4S congestion control algorithm {{RFC9331}} when marking outgoing packets as `ECT(1)`.
+
+## Link-Layer Subsystems {#uplink-link-layer}
+
+Link-layer subsystems, such as the cellular modem and Wi-Fi, schedule and manage transmission over the physical medium. Measurement studies on mobile devices have shown that uplink standing queues form inside link-layer driver and baseband firmware buffers rather than in the host operating system networking stack, which renders host-level queue management ineffective on its own {{IMC16-QCUT}}. Moreover, because grant-based cellular links rely on buffer status reports derived from modem-resident queues to request uplink radio resources, queueing cannot simply be pushed up into the host operating system without degrading throughput. Consequently, the low-latency queue and active queue management MUST be implemented within the link-layer subsystem itself.
+
+### Uplink Active Queue Management (AQM) {#uplink-aqm}
 
 The link-layer uplink buffer within mobile subsystems (such as cellular modems and Wi-Fi drivers) operates as a dynamic bottleneck subject to rapid capacity fluctuations driven by radio grant scheduling, carrier aggregation shifts, and physical layer channel fading. To achieve consistently low latency under these conditions without inducing throughput degradation, implementations MUST deploy a Dual-Queue Coupled AQM complying with the functional requirements in Section 2.5.1 of {{RFC9332}}. In particular, the subsystem MUST maintain separate queues for low-latency and Classic traffic, each managed by an AQM, where the low-latency queue AQM applies `CE` marking to ECN-capable packets and a work-conserving scheduler grants conditional priority to the low-latency queue without starving Classic traffic (Section 4.2.2 of {{RFC9332}}).
 
 As mentioned in Notes a. to Appendix A.1 of {{RFC9332}}, the drain rate of the queue can vary if it is scheduled relative to other queues or if it accommodates fluctuations in a wireless medium. To auto-adjust to changes in drain rate, the queue needs to be measured in time (e.g., packet sojourn time), not bytes or packets. This approach naturally accommodates large aggregated frame structures (e.g., up to 64kB aggregated packets passed via GSO) without triggering premature congestion signals.
 
-### Wi-Fi Subsystem Sojourn Time Recommendations
+#### Wi-Fi Subsystem Sojourn Time Recommendations
 
 In a shared wireless medium such as Wi-Fi, transmission requires contention-based spectrum acquisition and relies on frame aggregation to achieve channel efficiency. Often a buffer once scheduled for transmission cannot be expanded, resulting in traffic bursts and a potential delay for subsequent packets.
 
@@ -174,7 +215,7 @@ When the latency is dominated by the channel acquisition time, `CE` marking migh
 
 In standards that support multi-Traffic-Identifier (multi-TID) frame aggregation (such as IEEE 802.11be), different access categories can be mixed into a single A-MPDU aggregate. In these scenarios, the link-layer subsystem SHOULD NOT bundle latency-sensitive L4S frames with traffic using longer transmission windows.
 
-### Cellular Subsystem Sojourn Time Recommendations
+#### Cellular Subsystem Sojourn Time Recommendations
 
 Unlike the contention-based channel access of Wi-Fi, cellular networks utilise centralised, grant-based uplink scheduling managed by the base station.
 
@@ -184,7 +225,7 @@ When a flow transitions from an idle buffer to an active state, the device must 
 
 Where the cellular network provides pre-allocated uplink transmission resources (such as semi-persistent scheduling or configured grants), the initial scheduling turnaround is eliminated, allowing implementations to use the lower steady-state threshold directly.
 
-## Multi-Queue Scheduling and Bounded Latency Queueing
+### Multi-Queue Scheduling and Bounded Latency Queueing
 
 Any link layer that supports L4S MUST provide a low-latency queue designated for L4S packets and Non-Queue-Building traffic (as defined by Section 3.3 of {{RFC9956}}). This queue MUST be bounded as described in {{uplink-aqm}} and {{defense-against-misbehaving-traffic}}.
 
@@ -196,7 +237,7 @@ Some link-layer systems already support high-priority and low-priority queues wi
 
 When a Dual-Queue Coupled AQM ({{uplink-aqm}}) operates alongside high-priority and low-priority queues within the same bearer, traffic in the high-priority queue MUST NOT take unbounded precedence over the low-latency queue in a manner that delays low-latency packets beyond their target sojourn threshold. Scheduling and congestion coupling across the low-latency, high-priority, and low-priority queues SHOULD follow the guidance in Sections 2.5.1 and 4.2.2 of {{RFC9332}} so that queue-building flows remain bounded, the low-latency queue does not starve either queue-building queue under overload, and L4S flows coexist fairly with traffic in both queue-building queues.
 
-## Packet Classification
+### Packet Classification
 
 The link layer MUST steer uplink packets carrying the L4S identifier in the IP header to the low-latency queue. The link layer SHOULD also support mapping to the low-latency queue based on the NQB DSCP value (45) {{RFC9956}} as an alternative or supplementary classifier for local uplink queueing. However, because DSCP markings are frequently bleached or remarked at network boundaries, ECN mapping remains the most reliable end-to-end classifier across mobile networks.
 
@@ -204,7 +245,7 @@ Where a device uses local host metadata (such as per-application or per-user pri
 
 Link-layer networks MUST NOT attempt to dynamically classify packets for the low-latency queue using heuristic traffic inference or Deep Packet Inspection (DPI). Classification MUST rely solely on the explicit packet markings set by the application endpoints. This ensures compatibility with fully encrypted payloads and aligns with the end-to-end principle and permissionless innovation, as discussed in the ISP deployment observations in {{I-D.livingood-low-latency-deployment}} (which also contains details on Wi-Fi link-layer queueing considerations).
 
-## Defence Against Misbehaving Traffic {#defense-against-misbehaving-traffic}
+### Defence Against Misbehaving Traffic {#defense-against-misbehaving-traffic}
 
 Applications may erroneously or maliciously mark queue-building or unresponsive traffic with the L4S identifier without implementing responsive L4S congestion control. Because a Dual-Queue Coupled AQM operates without per-flow state, such traffic shares the low-latency queue with well-behaved flows and can drive `CE` marking to 100%, where ECN marks alone can no longer bound queueing delay or prevent ECN-capable traffic from starving `Not-ECT` flows.
 
@@ -212,9 +253,9 @@ Mobile link-layer subsystems MUST therefore implement the overload and unexpecte
 
 Overload drop protects overall queue stability, though a misbehaving flow can still elevate `CE` marking or loss for other low-latency flows sharing the queue. Because the device's uplink queue only carries traffic from that device (and any tethered clients), and maintaining per-flow state in modem or Wi-Fi subsystems may be difficult due to hardware limitations and ineffective across encrypted VPN tunnels (Section 4.1 of {{RFC9332}}), per-flow traffic protection (Section 5.2 of {{RFC9956}}) is OPTIONAL.
 
-## Transparency and Bleach Prevention
+### Uplink Transparency and Bleach Prevention
 
-The link layer MUST NOT modify the ECN field, DSCP values, or AccECN TCP options (172 and 174) on transit traffic, except for performing standard `CE` marking in the event of the queue buildup.
+The link layer MUST NOT modify the ECN field, DSCP values, or AccECN TCP options (172 and 174) on outbound traffic, except for performing standard `CE` marking during congestion as described in {{uplink-aqm}}.
 
 # Security Considerations
 
