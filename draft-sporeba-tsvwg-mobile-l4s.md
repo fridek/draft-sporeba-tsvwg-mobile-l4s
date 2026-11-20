@@ -71,7 +71,7 @@ informative:
     seriesinfo:
       3GPP: "TS 38.300"
   I-D.livingood-low-latency-deployment:
-  I-D.white-intarea-reordering:
+  draft-ietf-intarea-reordering:
   RFC10055:
   IMC16-QCUT:
     target: "https://doi.org/10.1145/2987443.2987490"
@@ -115,9 +115,12 @@ ECN-capable packet:
 L4S identifier (and L4S packet):
 : An IP-ECN field set to `ECT(1)` or `CE`, which link-layer and network nodes use to classify packets as L4S packets without per-flow state (Section 5.1 of {{RFC9331}}, Section 2.3 of {{RFC9332}}). Note that sending endpoints mark outgoing L4S packets as `ECT(1)`, whereas `CE` indicates congestion experienced along the path.
 
+NQB packet (and NQB traffic):
+: Non-queue building IP packet(s) with DSCP set to value `45` as defined by Section 6.1 of {{RFC9956}}.
+
 # Mobile Device Architecture
 
-Modern mobile devices separate the host operating system from link-layer subsystems such as cellular modems and Wi-Fi ({{fig-arch}}). The host operating system runs applications and manages socket APIs, transport protocols, and the IP stack. Link-layer subsystems manage wireless channel acquisition and air-interface retransmissions, and maintain their own internal packet buffers in both directions. Active queue management and congestion marking reside in the network on both paths, while on the uplink, queueing also occurs within the device's link-layer subsystem while awaiting channel access. Both the host operating system and link-layer subsystems need to correctly implement behaviours on the downlink and uplink paths relevant to L4S to achieve low-latency benefits.
+Modern mobile devices separate the host operating system from link-layer subsystems such as cellular modems and Wi-Fi ({{fig-arch}}). The host operating system runs applications and manages socket APIs, transport protocols, and the IP stack. Link-layer subsystems manage wireless channel acquisition and air-interface retransmissions, and maintain their own internal packet buffers in both directions. Both the host operating system and link-layer subsystems need to correctly implement behaviours on the downlink and uplink paths relevant to L4S to achieve low-latency benefits.
 
 ~~~ ascii-art
 +---------------- Mobile Device ----------------+
@@ -169,11 +172,11 @@ When maintaining per-destination or per-network caches, entries SHOULD be retire
 
 ### Inbound Packet Reordering
 
-Some link layers provide strong ordering guarantees for inbound packets by assigning a link-layer sequence number to each frame and buffering incoming packets so they can be presented to the host operating system in order {{I-D.white-intarea-reordering}}. In cellular networks, physical-layer retransmissions frequently deliver packets out of order, while the modem buffers received packets up to a network-configurable timeout to deliver them in order. Similarly, in Wi-Fi {{IEEE-802.11-2024}}, when an individual frame within an aggregated A-MPDU burst is lost, BlockAck resequencing holds subsequent frames in that traffic identifier (including frames belonging to unrelated flows) until MAC contention and retransmission complete. Both mechanisms cause head-of-line blocking and latency spikes when air-interface transmission errors occur.
+Some link layers provide strong ordering guarantees for inbound packets by assigning a link-layer sequence number to each frame and buffering incoming packets so they can be presented to the host operating system in order {{draft-ietf-intarea-reordering}}. In cellular networks, physical-layer retransmissions frequently deliver packets out of order, while the modem buffers received packets up to a network-configurable timeout to deliver them in order. Similarly, in Wi-Fi {{IEEE-802.11-2024}}, when an individual frame within an aggregated A-MPDU burst is lost, BlockAck resequencing holds subsequent frames in that traffic identifier (including frames belonging to unrelated flows) until MAC contention and retransmission complete. Both mechanisms cause head-of-line blocking and latency spikes when air-interface transmission errors occur.
 
 Delaying received packets increases latency, which is contrary to the low-latency goals of L4S. Also, by artificially introducing delays that were not imposed by the network, it reduces the accuracy of protocol rate estimation. The additional delays do not benefit protocol stacks which are equipped to handle out-of-order packets.
 
-Link-layer subsystems MUST NOT buffer inbound ECN-capable packets in a way that imposes measurable latency to the protocol stack. Correspondingly, cellular modems and Wi-Fi subsystems SHOULD ensure that ECN-capable packets can be delivered out of order rather than delayed to preserve link-layer ordering, so that air-interface retransmissions do not cause head-of-line blocking stalls.
+Link-layer subsystems MUST NOT buffer inbound ECN-capable packets in a way that imposes measurable latency to the protocol stack. Correspondingly, cellular modems and Wi-Fi subsystems MUST ensure that ECN-capable packets can be delivered out of order rather than delayed to preserve link-layer ordering, so that air-interface retransmissions do not cause head-of-line blocking stalls.
 
 Section 4.3 of {{RFC9331}} specifies that loss detection SHOULD be resilient to packet reordering. However, to enable the link-layer behaviour described above, L4S-aware protocol stacks on mobile devices MUST be prepared to receive out-of-order packets.
 
@@ -191,43 +194,46 @@ On the uplink, the mobile device originates traffic and isolates low-latency pac
 
 To enable UDP-based transport stacks (such as QUIC or real-time media over RTP) to send L4S traffic, the OS MUST provide APIs that allow applications to set the ECN codepoint {{RFC9331}} on outgoing packets on either a per-socket or per-packet basis. This capability MUST be exposed via standard socket APIs (e.g., `IP_TOS` and `IPV6_TCLASS`, as detailed in {{RFC10055}}) and MUST NOT be restricted by default security policies for standard application sockets. On some platforms, setting ECN codepoints shares calls with DSCP values, and applications might need to take steps to avoid overwriting existing DSCP or ECN markings.
 
-UDP-based transport stacks SHOULD mark L4S-capable traffic as `ECT(1)` and MUST NOT mark non-L4S traffic as `ECT(1)`. Other Non-Queue-Building (NQB) traffic (e.g., marked with DSCP 45) is considered compatible with L4S and can share the low-latency queue (Section 3.3 of {{RFC9956}}), and MUST NOT be marked as `ECT(1)` unless it also satisfies the Prague L4S requirements {{RFC9331}}. Link-layer handling of misbehaving traffic is described in {{defense-against-misbehaving-traffic}}.
+UDP-based transport stacks SHOULD mark L4S-capable traffic as `ECT(1)` and MUST NOT mark non-L4S traffic as `ECT(1)`. NQB traffic is considered compatible with L4S and can share the low-latency queue (Section 3.3 of {{RFC9956}}), and MUST NOT be marked as `ECT(1)` unless it also satisfies the Prague L4S requirements {{RFC9331}}. Link-layer handling of misbehaving traffic is described in {{defense-against-misbehaving-traffic}}.
 
-Because some network paths drop or bleach ECN-marked UDP packets, UDP-based transport stacks SHOULD validate ECN path traversal and fall back to `Not-ECT` if `ECT(1)` packets are persistently lost or bleached (for example, as specified for QUIC in Section 13.4 of {{RFC9000}}).
+Because some network paths drop or bleach ECN-marked UDP packets, UDP-based transport stacks SHOULD validate ECN path traversal and fall back to `Not-ECT` if `ECT(1)` packets are persistently lost or bleached (for example, as specified for QUIC in Section 13.4.2 of {{RFC9000}}).
 
 ### TCP Sender Requirements
 
-Where the host OS TCP stack sends L4S traffic on the uplink, it relies on Accurate ECN negotiation as described in {{tcp-support-detection}} and MUST use a compliant L4S congestion control algorithm {{RFC9331}} when marking outgoing packets as `ECT(1)`.
+Where the host OS TCP stack sends L4S traffic on the uplink it MUST use a compliant L4S congestion control algorithm {{RFC9331}}.
 
 ## Link-Layer Subsystems {#uplink-link-layer}
 
-Link-layer subsystems, such as the cellular modem and Wi-Fi, schedule and manage transmission over the physical medium. Measurement studies on mobile devices have shown that uplink standing queues form inside link-layer driver and baseband firmware buffers rather than in the host operating system networking stack {{IMC16-QCUT}}. Moreover, because grant-based cellular links rely on buffer status reports derived from modem-resident queues to request uplink radio resources, queueing cannot simply be pushed up into the host operating system without degrading throughput. Consequently, uplink queue isolation MUST be implemented within the link-layer subsystem, though the host operating system MAY also maintain a separate low-latency queue where link-layer buffering is kept shallow.
+Link-layer subsystems, such as the cellular modem and Wi-Fi, schedule and manage transmission over the physical medium. Measurement studies on mobile devices have shown that bufferbloat forms inside link-layer driver and baseband firmware buffers rather than in the host operating system networking stack {{IMC16-QCUT}}. Moreover, because grant-based cellular links rely on buffer status reports derived from modem-resident queues to request uplink radio resources, queueing cannot simply be pushed up into the host operating system without degrading throughput. Consequently, uplink queue isolation MUST be implemented within the link-layer subsystem. The host operating system MAY also maintain a separate low-latency queue where link-layer buffering is kept shallow.
 
 ### Avoiding On-Device CE Marking {#uplink-ce-marking}
 
 The host operating system and link-layer subsystems MUST NOT apply `CE` congestion markings to outbound uplink packets. Instead, uplink congestion marking is left to on-path network nodes, while the mobile device isolates low-latency packets from local queue-building traffic ({{low-latency-queueing}}).
 
-In 5G cellular networks supporting L4S {{TS23.501}} {{TS38.300}}, uplink congestion detection and `CE` marking are performed in the radio access network (base station), which schedules uplink grants across radio bearers and across devices using real-time radio and cell-load metrics. Performing `CE` marking on the mobile device is redundant on such networks and risks premature `CE` marks during normal grant-scheduling turnaround delays, while host-level active queue management is bypassed because packets drain rapidly into modem buffers to populate buffer status reports {{IMC16-QCUT}}.
+In 5G cellular networks supporting L4S {{TS23.501}} {{TS38.300}}, uplink congestion detection and `CE` marking are performed in the radio access network (base station), which schedules uplink grants across radio bearers and across devices using real-time radio and cell-load metrics. Performing `CE` marking on the mobile device is redundant on such networks and risks premature `CE` marks during normal grant-scheduling turnaround delays, while host-level active queue management is ineffective because packets drain rapidly into modem buffers to populate buffer status reports {{IMC16-QCUT}}.
 
-In shared contention-based wireless media such as Wi-Fi {{IEEE-802.11-2024}}, transmission opportunities depend on stochastic channel acquisition across contending stations. When delay is caused by channel contention rather than an excessive local sending rate, marking `CE` on the device is counterproductive because backing off does not improve transmission window opportunities and places the mobile device at a throughput disadvantage relative to other contending stations.
+In shared contention-based wireless media such as Wi-Fi {{IEEE-802.11-2024}}, transmission opportunities depend on the channel acquisition across contending stations. When delay is caused by channel contention rather than an local sending rate, marking `CE` on the device is counterproductive. In this scenario backing off does not improve transmission window opportunities and places the mobile device at a throughput disadvantage relative to other contending stations.
 
 ### Low-Latency Queueing and Bearer Isolation {#low-latency-queueing}
 
-On the uplink, the device needs to prevent Classic queue-building flows from delaying L4S and other Non-Queue-Building (NQB) packets (Section 3.3 of {{RFC9956}}).
+On the uplink, the device needs to prevent Classic queue-building flows from delaying L4S and NQB packets.
 
-In 5G cellular networks supporting L4S {{TS23.501}} {{TS38.300}}, when the core network detects `ECT(1)` or `CE` packets, it establishes a dedicated L4S Data Radio Bearer (DRB) and provisions Traffic Flow Templates (TFTs) or QoS rules on the device to steer matching packets onto that bearer. Because each radio bearer maintains its own independent link-layer queue, this bearer separation isolates L4S traffic without requiring separate local queue management in the modem. Cellular modems MUST support matching the 2-bit IP-ECN field in network-signalled TFTs and QoS rules, and the host-to-modem data path MUST ensure that backpressure from a congested Classic bearer does not cause head-of-line blocking for packets destined for a dedicated L4S bearer.
+In cellular networks supporting L4S (such as 5G {{TS23.501}} {{TS38.300}}), the network can assign L4S traffic to a dedicated data radio bearer - for example, dynamically upon detecting L4S packets, or via session policy - and provision classification rules on the device so that matching uplink packets are steered onto that bearer. Because each data radio bearer maintains its own link-layer queue under network-controlled scheduling, this bearer separation isolates L4S traffic from Classic queue buildup without requiring additional local queue separation in the modem. Cellular modems MUST support matching on the 2-bit IP-ECN field in network-signalled packet filters, and the host-to-modem data path MUST ensure that backpressure from a congested Classic bearer does not cause head-of-line blocking for packets destined for a dedicated L4S bearer.
 
-Where low-latency traffic is not isolated onto a dedicated radio bearer by the network (such as on Wi-Fi links, or on shared cellular bearers where the network does not support L4S), a link-layer subsystem that supports L4S MUST provide a dedicated low-latency queue for L4S and NQB traffic, and the host operating system MAY also provide such a queue where link-layer driver and firmware buffering is bounded (for example, to one or two transmission opportunities). Because the device does not perform coupled `CE` marking ({{uplink-ce-marking}}), this low-latency queue MUST follow the shallow-buffer and scheduling principles in Section 5.1 of {{RFC9956}}: it MUST enforce a shallow buffer (for example, 10 ms or less at the egress rate) and MUST use a work-conserving scheduler with a bounded weight (such as Deficit Round Robin) rather than strict priority, so that un-marked traffic in the low-latency queue cannot starve Classic traffic.
+Where low-latency traffic is not isolated onto a dedicated radio bearer by the network (such as on Wi-Fi links, or on shared cellular bearers where the network does not support L4S), a link-layer subsystem that supports L4S MUST provide a dedicated low-latency queue for L4S and NQB traffic. Some link-layer systems already support high-priority and low-priority queues within a shared bearer. Because such high-priority queues are typically not latency-bounded, any local low-latency queue MUST remain distinct from them:
 
-In Wi-Fi standards that support multi-Traffic-Identifier (multi-TID) frame aggregation (such as IEEE 802.11be), the link-layer subsystem SHOULD NOT bundle frames from the low-latency queue with traffic using longer transmission windows.
-
-Some link-layer systems already support high-priority and low-priority queues within a shared bearer. Because such high-priority queues are typically not latency-bounded, any local low-latency queue MUST remain distinct from them:
-
-*  **Low-Latency Queue:** For L4S and other Non-Queue-Building traffic.
+*  **Low-Latency Queue:** For L4S and NQB traffic.
 *  **High-Priority Queue:** For high-priority but potentially queue-building traffic.
 *  **Low-Priority Queue:** For queue-building traffic (e.g., CUBIC/Reno) and bulk data.
 
 Traffic in the high-priority queue MUST NOT take unbounded precedence over the low-latency queue in a manner that introduces queueing delay to low-latency packets.
+
+The host operating system MAY also provide a low-latency queue where link-layer driver and firmware buffering is bounded (for example, to one or two transmission opportunities). 
+
+Because the device does not perform `CE` marking ({{uplink-ce-marking}}), all low-latency queues on device MUST follow the shallow-buffer and scheduling principles in Section 5.1 of {{RFC9956}}: they MUST enforce a shallow buffer (for example, 10 ms or less at the egress rate) and MUST use a work-conserving scheduler with a bounded weight (such as Deficit Round Robin) rather than strict priority, so that un-marked traffic in the low-latency queue cannot starve Classic traffic.
+
+In Wi-Fi standards that support multi-Traffic-Identifier (multi-TID) frame aggregation (such as IEEE 802.11be), the link-layer subsystem SHOULD NOT bundle frames from the low-latency queue with traffic using longer transmission windows.
+
 
 ### Packet Classification
 
@@ -241,7 +247,7 @@ Link-layer subsystems MUST NOT attempt to dynamically classify packets for a low
 
 Applications may erroneously or maliciously mark queue-building or unresponsive traffic with the L4S identifier or NQB DSCP without implementing responsive congestion control. Because the device's low-latency queue does not apply `CE` marking ({{uplink-ce-marking}}), such traffic can overrun the shallow low-latency buffer and induce queueing delay or packet loss for well-behaved low-latency flows sharing the queue.
 
-To bound queueing delay and prevent starvation of Classic traffic, the low-latency queue MUST enforce a shallow buffer limit (dropping or redirecting excess packets upon overflow) and a bounded scheduling weight as described in {{low-latency-queueing}} (Section 5.1 of {{RFC9956}}). In addition, link-layer subsystems (or the host operating system) SHOULD implement traffic protection (Section 5.2 of {{RFC9956}}) to detect queue-building microflows in the low-latency queue and reclassify (demote) them to a queue-building queue. Where maintaining per-flow state in modem or Wi-Fi hardware is impractical or ineffective across encrypted VPN tunnels (Section 4.1 of {{RFC9332}}), implementations MAY rely on the fallback mechanisms described in {{no-ce-marking-path}}.
+To bound queueing delay and prevent starvation of Classic traffic, the low-latency queue MUST enforce a shallow buffer limit (dropping or redirecting excess packets upon overflow) and a bounded scheduling weight as described in {{low-latency-queueing}} (Section 5.1 of {{RFC9956}}). In addition, link-layer subsystems (or the host operating system) SHOULD implement traffic protection (Section 5.2 of {{RFC9956}}) to detect queue-building flows in the low-latency queue and reclassify (demote) them to a queue-building queue. Where maintaining per-flow state in modem or Wi-Fi subsystem is impractical due to hardware limitations, or simply ineffective (e.g. across encrypted VPN tunnels as described in Section 4.1 of {{RFC9332}}), implementations MAY rely on the fallback mechanisms described in {{no-ce-marking-path}}.
 
 ### Uplink Transparency and Bleach Prevention
 
@@ -249,14 +255,14 @@ The link layer MUST NOT modify the ECN field, DSCP values, or AccECN TCP options
 
 ## Behaviour on a Path That Never Marks CE {#no-ce-marking-path}
 
-An L4S sender on a mobile device will often traverse uplink paths where no on-path node applies `CE` markings, for example on 4G or 5G networks without L4S support, across Wi-Fi bottlenecks, or toward Internet paths with Classic bottlenecks.
+Sender on a mobile device might traverse a paths where no nodes leading to and including the node that is the transmission bottleneck apply `CE` markings.
 
 Where `ECT(1)` traffic shares a standard queue with Classic traffic (such as on a default cellular radio bearer without a local low-latency queue), compliant L4S congestion controllers fall back to Classic congestion control behaviour upon packet loss (Section 4.3 of {{RFC9331}}), achieving throughput and fairness comparable to Classic flows without further intervention.
 
 However, where the device steers `ECT(1)` packets into a shallow local low-latency queue ({{low-latency-queueing}}) and no downstream node marks `CE`, a capacity-seeking L4S flow will build a queue locally and suffer premature shallow-buffer drops, degrading both its own throughput and the latency of other flows sharing that queue. To mitigate this:
 
 1. Where per-flow traffic protection is supported (Section 5.2 of {{RFC9956}}), the link-layer subsystem (or host operating system) SHOULD selectively demote queue-building flows from the low-latency queue to a Classic queue. Similarly, when a sending transport on the host operating system observes repeated loss episodes on a connection while receiving zero `CE` marks, it SHOULD fall back to Classic congestion control and stop marking outgoing packets as `ECT(1)` for that flow (Section 4.3 of {{RFC9331}}), which steers subsequent packets into the Classic queue without requiring per-flow state in link-layer hardware.
-2. If shallow low-latency queue overflows persist across multiple flows, or if per-flow isolation is not possible, the device SHOULD either suspend local steering of `ECT(1)` traffic into the low-latency queue on that link (Section 5.1 of {{RFC9956}}) or disable `ECT(1)` marking on a per-destination or per-network basis (cached with a reasonable TTL as described in {{per-network-detection}}). Care SHOULD be taken not to disable `ECT(1)` across an entire cellular network solely due to packet loss at remote Internet bottlenecks when the local radio link is uncongested, because 5G networks rely on observing `ECT(1)` packets to establish a dedicated L4S radio bearer ({{low-latency-queueing}}).
+2. If shallow low-latency queue overflows persist across multiple flows, or if per-flow isolation is not possible, the device SHOULD disable `ECT(1)` marking on a per-destination or per-network basis. To prevent overly eager disabling of L4S in networks experiencing temporary issues, this decision should be ephemeral (instead of cached as in {{per-network-detection}}).
 
 # Security Considerations
 
