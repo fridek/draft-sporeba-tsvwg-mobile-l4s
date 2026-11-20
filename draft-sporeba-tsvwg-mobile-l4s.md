@@ -70,6 +70,7 @@ informative:
     seriesinfo:
       3GPP: "TS 38.300"
   I-D.livingood-low-latency-deployment:
+  I-D.white-intarea-reordering:
   RFC10055:
   IMC16-QCUT:
     target: "https://doi.org/10.1145/2987443.2987490"
@@ -167,13 +168,13 @@ When maintaining per-destination or per-network caches, entries SHOULD be retire
 
 ### Inbound Packet Reordering
 
-Some link layers provide strong ordering guarantees for inbound packets by assigning a link-layer sequence number to each packet and buffering incoming packets so they can be presented to the host operating system in order. In particular, cellular networks often perform out-of-order packet delivery at the physical layer, but require the cellular modem to deliver received packets to the host operating system in order. When packets are received out of order on the air interface, the modem waits up to a network-configurable timeout to receive all previous packets. This causes out-of-order packets to be delayed until all previous packets have been received, and causes latency spikes when packets are lost due to transmission errors.
+Some link layers provide strong ordering guarantees for inbound packets by assigning a link-layer sequence number to each frame and buffering incoming packets so they can be presented to the host operating system in order {{I-D.white-intarea-reordering}}. In cellular networks, physical-layer retransmissions frequently deliver packets out of order, while the modem buffers received packets up to a network-configurable timeout to deliver them in order. Similarly, in Wi-Fi {{IEEE-802.11-2024}}, when an individual frame within an aggregated A-MPDU burst is lost, BlockAck resequencing holds subsequent frames in that traffic identifier (including frames belonging to unrelated flows) until MAC contention and retransmission complete. Both mechanisms cause head-of-line blocking and latency spikes when air-interface transmission errors occur.
 
 Delaying received packets increases latency, which is contrary to the low-latency goals of L4S. Also, by artificially introducing delays that were not imposed by the network, it reduces the accuracy of protocol rate estimation. The additional delays do not benefit protocol stacks which are equipped to handle out-of-order packets.
 
-Link-layer subsystems MUST NOT buffer inbound ECN-capable packets in a way that imposes measurable latency to the protocol stack. Correspondingly, cellular modems SHOULD ensure that ECN-capable packets can be delivered out-of-order rather than delay to deliver them in-order. This ensures that air-interface retransmissions do not cause head-of-line blocking stalls.
+Link-layer subsystems MUST NOT buffer inbound ECN-capable packets in a way that imposes measurable latency to the protocol stack. Correspondingly, cellular modems and Wi-Fi subsystems SHOULD ensure that ECN-capable packets can be delivered out of order rather than delayed to preserve link-layer ordering, so that air-interface retransmissions do not cause head-of-line blocking stalls.
 
-Section 4.3 of {{RFC9331}} specifies that loss detection SHOULD be resilient to packet reordering. However, to enable the requirement on the cellular modem behaviour described above, L4S-aware protocol stacks on mobile devices MUST be prepared to receive out-of-order packets.
+Section 4.3 of {{RFC9331}} specifies that loss detection SHOULD be resilient to packet reordering. However, to enable the link-layer behaviour described above, L4S-aware protocol stacks on mobile devices MUST be prepared to receive out-of-order packets.
 
 ### Downlink Transparency and Bleach Prevention
 
