@@ -44,6 +44,7 @@ normative:
 
 informative:
   RFC3168:
+  RFC9000:
   RFC9330:
   RFC9332:
   IEEE-802.11-2024:
@@ -146,7 +147,7 @@ On the downlink, remote senders transmit L4S traffic toward the mobile device wh
 
 ### UDP Socket APIs for Reading ECN
 
-To enable UDP-based transport stacks (such as QUIC) to receive L4S traffic and report congestion feedback to the sender, the OS MUST provide APIs that allow applications to read the ECN codepoints of incoming packets on a per-packet basis. This capability MUST be exposed via standard socket APIs (e.g., `IP_RECVTOS` and `IPV6_RECVTCLASS` via ancillary data) and MUST NOT be restricted by default security policies for standard application sockets. Configuring UDP sockets for ECN on common platforms is detailed in {{RFC10055}}.
+To enable UDP-based transport stacks (such as QUIC or real-time media over RTP) to receive L4S traffic and report congestion feedback to the sender, the OS MUST provide APIs that allow applications to read the ECN codepoints of incoming packets on a per-packet basis. This capability MUST be exposed via standard socket APIs (e.g., `IP_RECVTOS` and `IPV6_RECVTCLASS` via ancillary data) and MUST NOT be restricted by default security policies for standard application sockets. Configuring UDP sockets for ECN on common platforms is detailed in {{RFC10055}}.
 
 ### TCP Support Detection and Bootstrapping {#tcp-support-detection}
 
@@ -188,9 +189,11 @@ On the uplink, the mobile device originates traffic and isolates low-latency pac
 
 ### UDP Socket APIs and Packet Marking
 
-To enable UDP-based transport stacks (such as QUIC) to send L4S traffic, the OS MUST provide APIs that allow applications to set the ECN codepoint {{RFC9331}} on outgoing packets on either a per-socket or per-packet basis. This capability MUST be exposed via standard socket APIs (e.g., `IP_TOS` and `IPV6_TCLASS`, as detailed in {{RFC10055}}) and MUST NOT be restricted by default security policies for standard application sockets. On some platforms, setting ECN codepoints shares calls with DSCP values, and applications might need to take steps to avoid overwriting existing DSCP or ECN markings.
+To enable UDP-based transport stacks (such as QUIC or real-time media over RTP) to send L4S traffic, the OS MUST provide APIs that allow applications to set the ECN codepoint {{RFC9331}} on outgoing packets on either a per-socket or per-packet basis. This capability MUST be exposed via standard socket APIs (e.g., `IP_TOS` and `IPV6_TCLASS`, as detailed in {{RFC10055}}) and MUST NOT be restricted by default security policies for standard application sockets. On some platforms, setting ECN codepoints shares calls with DSCP values, and applications might need to take steps to avoid overwriting existing DSCP or ECN markings.
 
 UDP-based transport stacks SHOULD mark L4S-capable traffic as `ECT(1)` and MUST NOT mark non-L4S traffic as `ECT(1)`. Other Non-Queue-Building (NQB) traffic (e.g., marked with DSCP 45) is considered compatible with L4S and can share the low-latency queue (Section 3.3 of {{RFC9956}}), and MUST NOT be marked as `ECT(1)` unless it also satisfies the Prague L4S requirements {{RFC9331}}. Link-layer handling of misbehaving traffic is described in {{defense-against-misbehaving-traffic}}.
+
+Because some network paths drop or bleach ECN-marked UDP packets, UDP-based transport stacks SHOULD validate ECN path traversal and fall back to `Not-ECT` if `ECT(1)` packets are persistently lost or bleached (for example, as specified for QUIC in Section 13.4 of {{RFC9000}}).
 
 ### TCP Sender Requirements
 
